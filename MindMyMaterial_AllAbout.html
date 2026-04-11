@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  MIND MY MATERIAL — All About [Material] Page               ║
+  ║  iSight Laboratories · InSight Division                     ║
+  ║                                                             ║
+  ║  USAGE:                                                     ║
+  ║  Link here with a hash: AllAbout.html#metal                 ║
+  ║  Valid hashes: #composite #metal #ceramic #polymer          ║
+  ║                #natural #elastomer #foam                    ║
+  ║                                                             ║
+  ║  QUICK EDIT GUIDE:                                          ║
+  ║  • Material descriptions  → PROFILES object in <script>     ║
+  ║  • Property data          → PROPS array in <script>         ║
+  ║  • Colors                 → CSS :root variables             ║
+  ║  • Back button link       → .back-btn href attribute        ║
+  ║  • Compare page link      → search "MindMyMaterial_Compare" ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All About — Mind My Material</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   BRAND & MATERIAL COLORS
+   Change hex values here to restyle colors
+══════════════════════════════════════════ */
+:root {
+  --amber:#d8973c; --amber-lt:#e8b86d; --rust:#bd632f;
+  --navy:#273e47; --teal:#335a70; --cream:#e8dfc4; --cream-dk:#c9bfa0;
+  --bg:#1a2a32; --surface:#1f3340; --surface2:#253d4d;
+  --border:rgba(232,223,196,0.08); --muted:#7a9aaa;
+  /* Material accent colors — one per material */
+  --composite:#9a8abf; --metal:#8fa8bc; --ceramic:#c4b59a;
+  --polymer:#6daa7a;   --natural:#8aaa5a; --elastomer:#c4835a; --foam:#7ab8cc;
+  /* Active material color — set by JS on page load */
+  --mat-color:#d8973c;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  background:var(--bg); color:var(--cream);
+  font-family:'DM Sans',sans-serif; font-weight:300;
+  min-height:100vh; overflow-x:hidden;
+}
+/* Ambient background glow */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 0%, rgba(var(--mat-rgb),.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 10% 90%, rgba(39,62,71,.5) 0%, transparent 60%);
+}
+
+/* ── PAGE WRAPPER ── */
+.page { max-width:860px; margin:0 auto; padding:40px 24px 100px; position:relative; z-index:1; }
+
+/* ── NAV BAR ── */
+.topbar {
+  position:sticky; top:0; z-index:20;
+  background:rgba(26,42,50,.92); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  padding:12px 24px; display:flex; align-items:center; gap:16px;
+}
+.topbar-logo { width:28px; opacity:.7; flex-shrink:0; }
+.topbar-logo svg { width:100%; height:auto; }
+.topbar-title { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:.1em; color:var(--muted); flex:1; }
+.nav-links { display:flex; gap:16px; }
+.nav-link {
+  font-size:12px; letter-spacing:.08em; color:var(--muted);
+  text-decoration:none; transition:color .2s;
+}
+.nav-link:hover, .nav-link.active { color:var(--amber); }
+
+/* ── HERO ── */
+.hero {
+  padding:56px 0 40px; text-align:center;
+  border-bottom:1px solid var(--border); margin-bottom:40px;
+  position:relative;
+}
+.hero::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse 80% 100% at 50% 0%, var(--mat-color) 0%, transparent 60%);
+  opacity:.08; pointer-events:none;
+}
+.eyebrow {
+  font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--amber); margin-bottom:12px; display:block;
+}
+.mat-symbol {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(60px,10vw,96px);
+  line-height:1; color:var(--mat-color);
+  filter:drop-shadow(0 0 24px var(--mat-color));
+  margin-bottom:4px;
+}
+.mat-name {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(48px,8vw,80px);
+  letter-spacing:.06em; color:var(--mat-color); line-height:1;
+  margin-bottom:14px;
+}
+.mat-tagline {
+  font-size:16px; color:var(--muted); font-style:italic; line-height:1.7;
+  max-width:420px; margin:0 auto 20px;
+}
+/* Material switcher pills */
+.mat-switcher {
+  display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:24px;
+}
+.mat-pill {
+  padding:5px 14px; border-radius:100px; border:1px solid;
+  font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:.1em;
+  cursor:pointer; transition:all .2s; text-decoration:none; opacity:.55;
+}
+.mat-pill:hover  { opacity:.85; transform:translateY(-1px); }
+.mat-pill.active { opacity:1; }
+
+/* ── SECTION LAYOUT ── */
+.section { margin-bottom:48px; }
+.section-header {
+  display:flex; align-items:center; gap:12px; margin-bottom:20px;
+}
+.section-num {
+  font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:.18em;
+  color:var(--mat-color); background:rgba(255,255,255,.04);
+  border:1px solid var(--border); border-radius:4px;
+  padding:3px 8px; flex-shrink:0;
+}
+h2 {
+  font-family:'Bebas Neue',sans-serif; font-size:20px;
+  letter-spacing:.14em; color:var(--cream);
+}
+.rule { width:100%; height:1px; background:linear-gradient(90deg,transparent,rgba(216,151,60,.2),transparent); margin:36px 0; }
+
+/* ── PROFILE CARDS (top 5 / bottom 5 traits) ── */
+.trait-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px;
+}
+.trait-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:14px 16px; transition:border-color .2s;
+}
+.trait-card:hover { border-color:rgba(232,223,196,.18); }
+.trait-card.high { border-left:3px solid var(--mat-color); }
+.trait-card.low  { border-left:3px solid rgba(122,154,170,.3); }
+.trait-name  { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:.06em; color:var(--cream); margin-bottom:3px; }
+.trait-prop  { font-size:11px; color:var(--muted); margin-bottom:8px; }
+.trait-bar   { height:5px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+.trait-bar-fill { height:100%; border-radius:3px; transition:width 1s ease; width:0; }
+.trait-rank  { font-size:11px; color:var(--muted); margin-top:5px; text-align:right; }
+
+/* ── FULL PROPERTY TABLE ── */
+.prop-list { display:flex; flex-direction:column; gap:8px; }
+.prop-row {
+  display:grid; grid-template-columns:140px 1fr 36px;
+  align-items:center; gap:12px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:8px; padding:10px 14px; transition:border-color .2s;
+}
+.prop-row:hover { border-color:rgba(232,223,196,.15); }
+.prop-label { font-size:12px; color:var(--cream); opacity:.85; line-height:1.35; }
+.prop-trait { font-size:10px; color:var(--muted); margin-top:2px; }
+.prop-bar-track { height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+.prop-bar-fill  { height:100%; border-radius:3px; transition:width 1.2s ease; width:0; }
+.prop-rank-badge {
+  font-family:'Bebas Neue',sans-serif; font-size:16px;
+  color:var(--mat-color); text-align:right;
+}
+
+/* ── MBTI / PSYCH SUMMARY CARDS ── */
+.info-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;
+}
+.info-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:18px 20px;
+}
+.info-card-label {
+  font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--amber); margin-bottom:6px;
+}
+.info-card-value {
+  font-family:'Bebas Neue',sans-serif; font-size:20px;
+  letter-spacing:.06em; color:var(--cream); margin-bottom:6px;
+}
+.info-card-desc { font-size:13px; color:var(--muted); line-height:1.6; }
+
+/* ── COMPARE CTA ── */
+.compare-cta {
+  background:linear-gradient(135deg, rgba(154,138,191,.12), rgba(143,168,188,.08));
+  border:1px solid rgba(154,138,191,.25); border-radius:16px;
+  padding:32px; text-align:center; margin-top:48px;
+}
+.compare-cta h2 { color:var(--cream); margin-bottom:10px; }
+.compare-cta p  { color:var(--muted); font-size:14px; line-height:1.7; margin-bottom:24px; }
+.btn-primary {
+  display:inline-block; padding:14px 36px; border-radius:100px;
+  background:var(--amber); color:var(--navy);
+  font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:.12em;
+  text-decoration:none; transition:all .2s;
+}
+.btn-primary:hover { background:var(--amber-lt); transform:translateY(-2px); box-shadow:0 8px 24px rgba(216,151,60,.3); }
+.btn-secondary {
+  display:inline-block; padding:12px 28px; border-radius:100px;
+  border:1px solid var(--border); color:var(--muted);
+  font-family:'Bebas Neue',sans-serif; font-size:16px; letter-spacing:.1em;
+  text-decoration:none; transition:all .2s; margin-left:12px;
+}
+.btn-secondary:hover { border-color:var(--amber); color:var(--amber); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+.fade { animation:fadeUp .45s ease both; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     STICKY TOP NAV
+     TO EDIT: update nav-link text or href targets
+══════════════════════════════════════════ -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 251.71 210">
+      <path fill="#273e47" d="M47.58,29.55c3.89-2.96,7.2-5.09,8.22-5.74,1.92-1.23,6.43-4.09,11.81-6.65,8.01-3.81,14.77-5.42,20.77-6.8,5.04-1.16,15.93-3.36,30.04-3.47,9.76-.08,17.2.87,22.12,1.51,4.59.6,10.95,1.46,19.13,3.63,4.29,1.14,10.44,2.79,17.86,6.12,5.5,2.46,13.17,5.97,21.45,13.07,3.03,2.6,10.76,9.64,17.26,21.08,2,3.51,4.85,8.61,6.87,16.01,1.03,3.78,2.68,11.22,2.09,20.7-.29,4.6-.71,10.61-3.74,17.68-1.29,3.03-4.37,9.67-11.36,15.11-4.27,3.32-8.28,4.84-9.79,5.36-1.91.66-6.76,2.3-13.08,2.04-5.59-.23-8.36-1.8-10.16,0-1.03,1.03-.97,2.34-1.05,5.59-.19,7.69-.28,11.53-1.34,14.35-1.38,3.66-4.09,5.59-7.92,8.31-6.05,4.3-11.93,5.51-16.21,6.35-3.82.75-10.08,1.55-18.01.6-1.76-.21-3.17-.46-4.5-.78-1.08-.26-4.08-.98-7.75-2.58-6.56-2.87-15.58-5.36-15.58-5.36-16.39-4.52-14.45-4.24-17.93-4.99-4.62-.99-9.32-1.99-15.69-2.49-3.52-.28-13.1-.99-22.64.91-5.6,1.11-8.59,2.04-8.59,2.04-1.75.58-2.45.89-3.91,1.34-.92.23-1.92.38-1.92.38-3.33.52-5.94.22-6.95.08-3.15-.44-5.45-1.43-6.28-1.81-.99-.46-4.42-2.13-8.07-6.35-2.62-3.03-5.84-7.94-8.07-16.62-.62-2.4-3.35-13.61-.93-29.21,1.84-11.91,5.75-20.38,8.18-25.55,6.38-13.58,14.06-22.34,18.38-27.19,1.3-1.46,8.3-9.25,18.31-16.85Z"/>
+      <path fill="#335a70" d="M55.14,36.38c3.4-2.49,6.28-4.29,7.18-4.84,1.67-1.03,5.61-3.45,10.31-5.6,6.99-3.21,12.89-4.57,18.14-5.73,4.4-.98,13.91-2.83,26.22-2.93,8.52-.07,15.02.73,19.31,1.27,4.01.51,9.56,1.23,16.7,3.06,3.74.96,9.11,2.35,15.59,5.16,4.8,2.08,11.5,5.03,18.72,11.01,2.65,2.19,9.39,8.12,15.07,17.76,1.74,2.96,4.24,7.26,6,13.5.9,3.18,2.34,9.45,1.83,17.44-.25,3.88-.62,8.94-3.26,14.9-1.13,2.55-3.81,8.15-9.92,12.73-3.73,2.8-7.23,4.08-8.55,4.52-1.67.56-5.9,1.94-11.42,1.72-4.88-.2-7.3-1.52-8.87,0-.9.87-.84,1.98-.91,4.71-.16,6.48-.25,9.72-1.17,12.09-1.2,3.08-3.57,4.71-6.91,7-5.28,3.62-10.42,4.64-14.16,5.35-3.34.63-8.8,1.31-15.72.51-7.07-.82-7.66-2.26-24.4-7.38-8.98-2.75-13.29-3.71-15.66-4.2-4.04-.84-8.13-1.67-13.7-2.1-3.07-.24-11.43-.83-19.77.76-4.89.94-7.5,1.72-7.5,1.72-2.71.88-3.6,1.32-5.87,1.66-2.91.43-5.18.18-6.07.06-2.75-.37-4.76-1.21-5.48-1.53-.87-.38-3.86-1.79-7.05-5.35-2.28-2.55-5.1-6.69-7.05-14-.54-2.02-2.92-11.47-.82-24.62,1.61-10.04,5.02-17.18,7.14-21.53,5.57-11.45,12.27-18.82,16.05-22.92,1.13-1.23,7.25-7.8,15.98-14.2Z"/>
+      <path fill="#bd632f" d="M63.38,43.32c2.91-2.06,5.37-3.55,6.13-4,1.43-.85,4.79-2.85,8.81-4.63,5.98-2.65,11.02-3.77,15.5-4.74,3.76-.81,11.89-2.34,22.41-2.42,7.28-.06,12.83.6,16.5,1.05,3.43.42,8.17,1.01,14.27,2.53,3.2.79,7.79,1.95,13.32,4.26,4.1,1.72,9.82,4.16,16,9.1,2.26,1.81,8.03,6.71,12.88,14.68,1.49,2.44,3.62,6,5.13,11.16.77,2.63,2,7.82,1.56,14.42-.21,3.2-.53,7.39-2.79,12.31-.97,2.11-3.26,6.74-8.47,10.52-3.18,2.31-6.18,3.37-7.3,3.74-1.42.46-5.04,1.6-9.76,1.42-4.17-.16-6.24-1.25-7.58,0-.77.72-.72,1.63-.78,3.89-.14,5.35-.21,8.03-1,10-1.03,2.55-3.05,3.89-5.91,5.79-4.51,2.99-8.9,3.84-12.1,4.42-2.85.52-7.52,1.08-13.43.42-6.04-.68-6.55-1.87-20.85-6.1-7.67-2.27-11.36-3.07-13.38-3.47-3.45-.69-6.95-1.38-11.71-1.74-2.62-.19-9.77-.69-16.89.63-4.18.77-6.41,1.42-6.41,1.42-2.31.73-3.07,1.09-5.02,1.37-2.48.36-4.43.15-5.18.05-2.35-.31-4.07-1-4.68-1.26-.74-.32-3.3-1.48-6.02-4.42-1.95-2.11-4.36-5.53-6.02-11.58-.46-1.67-2.5-9.48-.7-20.35,1.37-8.3,4.29-14.2,6.1-17.8,4.76-9.46,10.49-15.56,13.71-18.94.97-1.01,6.19-6.44,13.66-11.73Z"/>
+      <path fill="#d8973c" d="M72.51,50.62c2.41-1.63,4.46-2.8,5.09-3.16,1.19-.67,3.98-2.25,7.31-3.66,4.96-2.1,9.14-2.98,12.86-3.74,3.12-.64,9.86-1.85,18.6-1.91,6.04-.04,10.65.48,13.69.83,2.84.33,6.78.8,11.84,2,2.65.63,6.46,1.54,11.06,3.37,3.4,1.36,8.15,3.28,13.28,7.19,1.88,1.43,6.66,5.31,10.69,11.6,1.24,1.93,3,4.74,4.26,8.82.64,2.08,1.66,6.18,1.3,11.4-.18,2.53-.44,5.84-2.31,9.73-.8,1.67-2.7,5.32-7.03,8.32-2.64,1.83-5.12,2.66-6.06,2.95-1.18.37-4.18,1.27-8.09,1.12-3.46-.13-5.18-.99-6.29,0-.64.57-.6,1.29-.65,3.08-.12,4.23-.17,6.35-.83,7.9-.85,2.01-2.53,3.08-4.9,4.57-3.74,2.37-7.39,3.03-10.04,3.49-2.37.41-6.24.86-11.15.33-5.01-.53-5.43-1.47-17.3-4.82-6.36-1.8-9.43-2.42-11.1-2.74-2.86-.55-5.77-1.09-9.71-1.37-2.18-.15-8.11-.54-14.02.5-3.47.61-5.32,1.12-5.32,1.12-1.92.58-2.55.86-4.16,1.08-2.06.28-3.68.12-4.3.04-1.95-.24-3.37-.79-3.89-1-.61-.25-2.74-1.17-5-3.49-1.62-1.67-3.62-4.37-5-9.15-.38-1.32-2.07-7.49-.58-16.08,1.14-6.56,3.56-11.22,5.07-14.07,3.95-7.48,8.7-12.3,11.38-14.97.8-.8,5.14-5.09,11.33-9.27Z"/>
+      <path fill="#6daa7a" d="M82.32,58.14c1.92-1.16,3.54-2,4.04-2.26.94-.48,3.16-1.61,5.81-2.61,3.94-1.5,7.27-2.13,10.22-2.67,2.48-.46,7.84-1.32,14.78-1.37,4.8-.03,8.46.34,10.88.59,2.26.24,5.39.57,9.41,1.43,2.11.45,5.14,1.1,8.79,2.41,2.71.97,6.48,2.35,10.55,5.14,1.49,1.02,5.29,3.79,8.49,8.29.98,1.38,2.39,3.39,3.38,6.3.51,1.49,1.32,4.41,1.03,8.14-.14,1.81-.35,4.17-1.84,6.95-.64,1.19-2.15,3.8-5.59,5.94-2.1,1.31-4.07,1.9-4.82,2.11-.94.26-3.33.9-6.43.8-2.75-.09-4.11-.71-5,0-.51.4-.48.92-.51,2.2-.09,3.02-.14,4.53-.66,5.64-.68,1.44-2.01,2.2-3.9,3.27-2.97,1.69-5.87,2.17-7.98,2.5-1.88.29-4.96.61-8.86.24-3.99-.38-4.32-1.05-13.75-3.45-5.06-1.28-7.49-1.73-8.82-1.96-2.28-.39-4.59-.78-7.72-.98-1.73-.11-6.44-.39-11.14.36-2.76.44-4.23.8-4.23.8-1.53.41-2.03.61-3.31.77-1.64.2-2.92.09-3.42.03-1.55-.17-2.68-.56-3.09-.71-.49-.18-2.18-.84-3.97-2.5-1.29-1.19-2.87-3.12-3.97-6.54-.3-.94-1.65-5.35-.46-11.49.91-4.68,2.83-8.02,4.03-10.05,3.14-5.34,6.92-8.78,9.05-10.69.64-.57,4.08-3.64,9.01-6.62Z"/>
+    </svg>
+  </div>
+  <span class="topbar-title">MIND MY MATERIAL</span>
+  <nav class="nav-links">
+    <!-- TO EDIT: update these links to match your deployed filenames -->
+    <a class="nav-link" href="MindMyMaterial_App_v9.html">← Take the Test</a>
+    <a class="nav-link" href="MindMyMaterial_Compare.html">Compare All →</a>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN PAGE CONTENT
+     All content injected by buildPage() in JS
+══════════════════════════════════════════ -->
+<div class="page" id="pageContent"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   MATERIAL PROFILES
+   TO EDIT: update tagline, summary, strengths, challenges
+   for any material below.
+══════════════════════════════════════════════════════════ */
+const PROFILES = {
+  composite: {
+    name:'Composite', symbol:'CFRP', color:'#9a8abf',
+    tagline:'Complex. Balanced. Greater than the sum of parts.',
+    summary:'You are multifaceted in a way that defies simple categories. Like carbon fiber reinforced polymer, your strength comes from the combination — different elements working in concert to produce properties none could achieve alone. You are strategic, collaborative, and difficult to fully read on first meeting.',
+    strengths:'You build systems, teams, and frameworks. You see across silos and bring different strengths to different people. Your versatility means you can operate at multiple levels — tactical and strategic, technical and human.',
+    challenges:'Composites can be brittle along certain axes. Your complexity can make you hard to read. You may struggle with consistency — people who depend on you want to know which version of you they\'ll get.',
+    mbti:'INTJ / ENTJ',
+    psych:'High Conscientiousness + Openness (Big Five)',
+    archetype:'The Architect',
+  },
+  metal: {
+    name:'Metal', symbol:'Fe', color:'#8fa8bc',
+    tagline:'Resilient. Dependable. Built to last.',
+    summary:'You are strong-willed and resolute — someone others rely on when things get hard. Like steel under load, you hold your shape under pressure. You have high standards, you keep your word, and you expect the same from others.',
+    strengths:'Protective and steadfast in relationships. At work you are the person who delivers — no excuses. Your consistency makes you an anchor for others. When things go wrong, people look for you.',
+    challenges:'Your rigidity is both your greatest strength and your core challenge. You can come across as inflexible. Metals fatigue under repeated cycling — watch for slow accumulation of stress over time.',
+    mbti:'ISTJ / ESTJ',
+    psych:'High Conscientiousness + Low Neuroticism (Big Five)',
+    archetype:'The Pillar',
+  },
+  ceramic: {
+    name:'Ceramic', symbol:'Si₃N₄', color:'#c4b59a',
+    tagline:'Refined. Precise. Holds form under fire.',
+    summary:'You bring elegance and precision to everything you do. Like porcelain, you are crafted carefully, resist heat remarkably, and hold a standard that most people never reach. You are perfectionistic, selective in relationships, and deeply principled.',
+    strengths:'You form few but deep connections. At work you are the architect, the analyst, the one who gets it right the first time. You find chaos draining. You are at your best when expectations are clear and quality is the measure.',
+    challenges:'Your brittleness is real — you can fracture under sudden impact. Ceramics don\'t bend; they break. You may struggle with unexpected change or environments that require rapid adaptation.',
+    mbti:'INTJ / INFJ',
+    psych:'High Conscientiousness + High Perfectionism',
+    archetype:'The Craftsman',
+  },
+  polymer: {
+    name:'Polymer', symbol:'C₂H₄', color:'#6daa7a',
+    tagline:'Adaptable. Practical. Made for real life.',
+    summary:'You are versatile and easy to work with — practically minded, socially fluid, and surprisingly durable under strain. Like a good polymer, you flex without snapping and return to form without drama.',
+    strengths:'You make friends easily across very different circles. At work you are the integrator — you can read a room, shift approach mid-conversation, and find what works without being precious about method.',
+    challenges:'Sometimes flexibility becomes avoidance. Polymers can creep — slowly deforming under constant low-level stress without anyone noticing. Your adaptability can mask a lack of strong personal anchors.',
+    mbti:'ENFP / ENTP',
+    psych:'High Agreeableness + High Openness (Big Five)',
+    archetype:'The Connector',
+  },
+  natural: {
+    name:'Natural', symbol:'Org', color:'#8aaa5a',
+    tagline:'Grounded. Warm. Growing toward the light.',
+    summary:'You are rooted in the organic — in real places, real relationships, and experience over abstraction. Like wood or stone, you carry the marks of your history and are stronger for them. You are warm, authentic, and growth-oriented.',
+    strengths:'You build community naturally. In relationships you lead with warmth and presence. At work you thrive in mission-driven environments where the human element matters.',
+    challenges:'Natural materials are vulnerable to certain conditions — moisture, rot, environments that extract without replenishing. Protect yourself from people and places that take without giving back.',
+    mbti:'ISFJ / ENFJ',
+    psych:'High Agreeableness + High Emotional Stability (Big Five)',
+    archetype:'The Nurturer',
+  },
+  elastomer: {
+    name:'Elastomer', symbol:'C₄H₆', color:'#c4835a',
+    tagline:'Resilient. Bouncy. Always returns to form.',
+    summary:'You absorb the hard hits and spring back. Life has stretched you — but you always return to yourself. You are playful, accommodating, and hard to permanently wound. You live in the present and resist rigidity.',
+    strengths:'You are the person who keeps things light without being shallow. At work you thrive in dynamic environments and struggle with bureaucracy. Your bounce-back is genuine, not performance.',
+    challenges:'Elastomers can over-stretch. Watch for over-accommodating — saying yes too often, absorbing others\' problems until your own structure is compromised. There is a yield point even for elastomers.',
+    mbti:'ESFP / ENFP',
+    psych:'High Extraversion + High Agreeableness (Big Five)',
+    archetype:'The Springboard',
+  },
+  foam: {
+    name:'Foam', symbol:'PU', color:'#7ab8cc',
+    tagline:'Gentle. Absorbing. The quiet support.',
+    summary:'You cushion the world around you. Others feel safer and less burdened near you. You absorb impact without complaint and rarely ask for recognition. Like memory foam, you take the shape of your environment.',
+    strengths:'You are the listener, the supporter, the one who shows up quietly. At work you are underestimated until suddenly essential. Your lightness is a feature, not a weakness.',
+    challenges:'Compression fatigue is real — absorbing too much for too long degrades your structure. You may struggle to take up space, assert needs, or be seen. Learn to decompress before you collapse.',
+    mbti:'INFP / ISFP',
+    psych:'High Agreeableness + High Openness + Low Assertiveness',
+    archetype:'The Cushion',
+  },
+};
+
+/* ══════════════════════════════════════════════════════════
+   PROPERTY DATA — sourced from MTLSave7normKEY workbook tab
+   43 properties, ranks 1-7 per material (7 = highest)
+   TO EDIT: update in the source Excel file and re-export,
+   or edit individual entries below.
+══════════════════════════════════════════════════════════ */
+const PROPS = [{"no":0,"property":"Compliance/Softness","symbol":"Soft","unit_m":"1/Gpa","description":"Measure of deformability; inverse of stiffness (how easily material bends under load).","trait":"Indecisive","explanation":"Compliance ranks highest for foams/elastomers (softest/most flexible).","psych":"high agreeableness (Big Five); compliant, empathetic behavior","mbti":"ENFP","mbti_q":"Adaptable, enthusiastic, people-oriented","rank_def":"7 = Most Compliant","ranks":{"composite":1,"metal":2,"ceramic":3,"polymer":4,"natural":5,"elastomer":6,"foam":7}},{"no":1,"property":"Melting Temperature","symbol":"Tm","unit_m":"°C","description":"Temperature at which material changes from solid to liquid.","trait":"Calm under Pressure","explanation":"High melting temperature indicates stability in high-heat (stressful) situations.","psych":"Low Neuroticism (Big Five); Emotional Stability","mbti":"ISTJ","mbti_q":"Reliable, calm, methodical","rank_def":"7 = Most Stable Under Heat","ranks":{"composite":6,"metal":5,"ceramic":7,"polymer":4,"natural":2,"elastomer":1,"foam":3}},{"no":2,"property":"Young's Modulus","symbol":"E","unit_m":"GPa","description":"Measure of stiffness; resistance to elastic deformation under tensile/compressive stress.","trait":"Resolute","explanation":"High modulus reflects stiffness and resistance to deformation, symbolizing firmness in beliefs.","psych":"Conscientiousness (Big Five); Determination","mbti":"INTJ","mbti_q":"Strategic, determined, principled","rank_def":"7 = Most Resolute","ranks":{"composite":7,"metal":5,"ceramic":6,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":3,"property":"Density","symbol":"ρ","unit_m":"g/cm³","description":"Mass per unit volume; relates to how substantial or grounded a material feels.","trait":"Groundedness","explanation":"Higher density suggests a more grounded, substantial presence.","psych":"Conscientiousness + Emotional Stability","mbti":"ISTJ","mbti_q":"Stable, practical, dependable","rank_def":"7 = Most Grounded","ranks":{"composite":5,"metal":7,"ceramic":6,"polymer":4,"natural":2,"elastomer":3,"foam":1}},{"no":4,"property":"Tensile Yield Strength","symbol":"σy","unit_m":"MPa","description":"Stress at which a material begins to permanently deform.","trait":"Resilience","explanation":"High yield strength reflects ability to withstand stress before breaking under pressure.","psych":"Resilience (APA); Grit (Duckworth)","mbti":"ESTJ","mbti_q":"Persistent, responsible, decisive","rank_def":"7 = Most Resilient","ranks":{"composite":6,"metal":5,"ceramic":7,"polymer":4,"natural":2,"elastomer":3,"foam":1}},{"no":5,"property":"Ultimate Tensile Strength","symbol":"Ftu","unit_m":"MPa","description":"Maximum stress a material can withstand before failure.","trait":"Endurance","explanation":"UTS reflects maximum capacity to sustain effort and discipline over time.","psych":"Conscientiousness (Big Five); Perseverance","mbti":"ISTJ","mbti_q":"Enduring, disciplined, thorough","rank_def":"7 = Most Enduring","ranks":{"composite":6,"metal":7,"ceramic":5,"polymer":4,"natural":2,"elastomer":3,"foam":1}},{"no":6,"property":"Specific Tensile Strength","symbol":"σts/ρ","unit_m":"kN·m/kg","description":"Strength per unit weight — how much output per unit of resource.","trait":"Efficiency","explanation":"High specific strength = doing more with less. Strategic resource management.","psych":"Conscientiousness + Low Neuroticism","mbti":"INTJ","mbti_q":"Strategic, efficient, goal-oriented","rank_def":"7 = Most Efficient","ranks":{"composite":7,"metal":6,"ceramic":5,"polymer":4,"natural":3,"elastomer":1,"foam":2}},{"no":7,"property":"Fracture Toughness","symbol":"KIc","unit_m":"MPa√m","description":"Resistance to crack propagation; ability to absorb energy and deform plastically before fracturing.","trait":"Toughness","explanation":"High fracture toughness = ability to absorb hard knocks without catastrophic failure.","psych":"Resilience; Hardiness (Kobasa)","mbti":"ESTP","mbti_q":"Action-oriented, adaptable, risk-tolerant","rank_def":"7 = Toughest","ranks":{"composite":6,"metal":7,"ceramic":5,"polymer":2,"natural":4,"elastomer":3,"foam":1}},{"no":8,"property":"Cost per Mass","symbol":"Cm","unit_m":"$/kg","description":"Economic value relative to mass — pragmatic resource assessment.","trait":"Pragmatism","explanation":"Higher cost material = higher perceived strategic value and selectivity.","psych":"Conscientiousness; Practical Intelligence","mbti":"ENTJ","mbti_q":"Decisive, strategic, resource-aware","rank_def":"7 = Most Pragmatic/Selective","ranks":{"composite":7,"metal":6,"ceramic":5,"polymer":1,"natural":2,"elastomer":4,"foam":3}},{"no":9,"property":"Specific Heat","symbol":"Cp","unit_m":"J/kg·K","description":"Energy required to raise temperature — emotional capacity and buffer.","trait":"Emotional Stability","explanation":"High specific heat = takes a lot to change your emotional temperature. Steady.","psych":"Low Neuroticism (Big Five); Equanimity","mbti":"ISFJ","mbti_q":"Warm, steady, reliable, patient","rank_def":"7 = Most Emotionally Stable","ranks":{"composite":1,"metal":2,"ceramic":3,"polymer":4,"natural":7,"elastomer":5,"foam":6}},{"no":10,"property":"Thermal Conductivity","symbol":"κ","unit_m":"W/m·K","description":"Rate of heat transfer — how readily you share energy with others.","trait":"Connectivity","explanation":"High conductivity = sharing warmth and energy freely. Low = more selective/insulating.","psych":"Extraversion (Big Five); Social Warmth","mbti":"ESFJ","mbti_q":"Warm, social, community-oriented","rank_def":"7 = Most Connected","ranks":{"composite":5,"metal":7,"ceramic":6,"polymer":3,"natural":1,"elastomer":2,"foam":4}},{"no":11,"property":"Thermal Expansion","symbol":"α","unit_m":"µm/m·K","description":"How much a material expands when heated — growth in response to new environments.","trait":"Adaptability","explanation":"High thermal expansion = openness to change and environmental influence.","psych":"Openness to Experience (Big Five)","mbti":"ENFP","mbti_q":"Creative, curious, adaptable","rank_def":"7 = Most Adaptive","ranks":{"composite":2,"metal":3,"ceramic":1,"polymer":5,"natural":4,"elastomer":6,"foam":7}},{"no":12,"property":"Electrical Resistivity","symbol":"ρe","unit_m":"Ω·m","description":"Resistance to electrical flow — independence from external influence.","trait":"Independence","explanation":"High resistivity = self-directed, doesn't follow the crowd. Low = highly influenced by environment.","psych":"Low Agreeableness; Autonomy (Self-Determination Theory)","mbti":"INTJ","mbti_q":"Independent, self-directed, non-conformist","rank_def":"7 = Most Independent","ranks":{"composite":4,"metal":1,"ceramic":5,"polymer":3,"natural":2,"elastomer":7,"foam":6}},{"no":13,"property":"Dielectric Constant","symbol":"εr","unit_m":"F/m","description":"Ability to store electrical energy — capacity to hold and process information.","trait":"Capacitance","explanation":"High dielectric constant = ability to hold charge, process information, strategic depth.","psych":"Intelligence; Working Memory Capacity","mbti":"INTJ","mbti_q":"Analytical, strategic, information-rich","rank_def":"7 = Most Capacious","ranks":{"composite":6,"metal":7,"ceramic":5,"polymer":3,"natural":2,"elastomer":4,"foam":1}},{"no":14,"property":"Embodied Energy","symbol":"Ee","unit_m":"MJ/kg","description":"Total energy required to produce the material — effort and investment.","trait":"Effortfulness","explanation":"High embodied energy = significant effort invested in becoming who you are.","psych":"Conscientiousness; Deliberate Practice (Ericsson)","mbti":"INTJ","mbti_q":"Thorough, invested, high-effort","rank_def":"7 = Highest Effort Invested","ranks":{"composite":7,"metal":6,"ceramic":2,"polymer":3,"natural":1,"elastomer":4,"foam":5}},{"no":15,"property":"Carbon Footprint","symbol":"CO₂","unit_m":"kg CO₂/kg","description":"Environmental impact of production — sense of responsibility and accountability.","trait":"Responsibility","explanation":"High carbon footprint awareness = high sense of responsibility for impact on others.","psych":"Conscientiousness; Moral Responsibility","mbti":"INFJ","mbti_q":"Principled, purposeful, responsible","rank_def":"7 = Most Responsible","ranks":{"composite":7,"metal":6,"ceramic":3,"polymer":2,"natural":1,"elastomer":4,"foam":5}},{"no":16,"property":"Water Demand","symbol":"Wq","unit_m":"L/kg","description":"Resource consumption in production — how much you draw from your environment.","trait":"Resourcefulness","explanation":"Ability to make do with less; low water demand = highly resourceful.","psych":"Resourcefulness; Problem-Solving Creativity","mbti":"ISTP","mbti_q":"Practical, observant, resource-efficient","rank_def":"7 = Most Resourceful","ranks":{"composite":5,"metal":6,"ceramic":1,"polymer":2,"natural":7,"elastomer":4,"foam":3}},{"no":17,"property":"Flammability","symbol":"Fl","unit_m":"index","description":"Susceptibility to ignition — emotional volatility and reactivity.","trait":"Volatility","explanation":"High flammability = quicker to ignite emotionally. Low = steady, hard to provoke.","psych":"Neuroticism (Big Five); Emotional Reactivity","mbti":"ESFP","mbti_q":"Spontaneous, expressive, reactive","rank_def":"7 = Most Volatile","ranks":{"composite":3,"metal":2,"ceramic":1,"polymer":6,"natural":7,"elastomer":4,"foam":5}},{"no":18,"property":"Environmental Resistance (Freshwater)","symbol":"Fres","unit_m":"index","description":"Resistance to freshwater corrosion — steadfastness in familiar/calm conditions.","trait":"Steadfastness (Calm)","explanation":"Holds up in ordinary conditions without degrading. Reliable in everyday life.","psych":"Conscientiousness; Reliability","mbti":"ISTJ","mbti_q":"Steady, reliable, low-maintenance","rank_def":"7 = Most Steadfast","ranks":{"composite":7,"metal":6,"ceramic":1,"polymer":2,"natural":4,"elastomer":3,"foam":5}},{"no":19,"property":"Environmental Resistance (Saltwater)","symbol":"Sres","unit_m":"index","description":"Resistance to saltwater corrosion — steadfastness under harsh/adversarial conditions.","trait":"Steadfastness (Harsh)","explanation":"Holds up even when conditions are hostile or corrosive. True resilience.","psych":"Hardiness (Kobasa); Post-Traumatic Growth","mbti":"ISTP","mbti_q":"Resourceful under pressure, adaptive, tough","rank_def":"7 = Most Steadfast in Adversity","ranks":{"composite":7,"metal":6,"ceramic":1,"polymer":2,"natural":4,"elastomer":3,"foam":5}},{"no":20,"property":"Environmental Resistance (UV)","symbol":"UVres","unit_m":"index","description":"Resistance to UV degradation — longevity under public exposure and scrutiny.","trait":"Longevity under Exposure","explanation":"Maintains integrity when in the spotlight or under prolonged scrutiny.","psych":"Psychological Hardiness; Resilience","mbti":"ENTJ","mbti_q":"Confident under scrutiny, consistent in public","rank_def":"7 = Most Durable under Exposure","ranks":{"composite":3,"metal":1,"ceramic":2,"polymer":6,"natural":4,"elastomer":5,"foam":7}},{"no":21,"property":"Environmental Resistance (Wear)","symbol":"Wres","unit_m":"index","description":"Resistance to wear — durability of relationships and repeated daily contact.","trait":"Durability","explanation":"Maintains integrity through repeated friction and daily use without wearing down.","psych":"Agreeableness + Conscientiousness (Big Five)","mbti":"ISFJ","mbti_q":"Loyal, enduring, friction-tolerant","rank_def":"7 = Most Durable","ranks":{"composite":3,"metal":2,"ceramic":1,"polymer":4,"natural":6,"elastomer":5,"foam":7}},{"no":22,"property":"Compressive Strength","symbol":"σc","unit_m":"MPa","description":"Resistance to compression — ability to hold structure when weighed down.","trait":"Structured Efficiency","explanation":"Stands firm when burdened. Doesn't collapse under the weight of responsibility.","psych":"Conscientiousness; Stress Tolerance","mbti":"ESTJ","mbti_q":"Organized, structured, pressure-tolerant","rank_def":"7 = Best Under Compression","ranks":{"composite":5,"metal":6,"ceramic":7,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":23,"property":"Specific Modulus","symbol":"E/ρ","unit_m":"GPa·cm³/g","description":"Stiffness per unit weight — intellectual composure without heaviness.","trait":"Composure under Load","explanation":"Light but firm. Maintains intellectual structure without being overbearing.","psych":"Emotional Intelligence; Cognitive Load Management","mbti":"INTP","mbti_q":"Analytical, composed, efficient thinker","rank_def":"7 = Best Composure per Effort","ranks":{"composite":6,"metal":2,"ceramic":3,"polymer":4,"natural":7,"elastomer":1,"foam":5}},{"no":24,"property":"Loss Coefficient","symbol":"η","unit_m":"dimensionless","description":"Damping capacity — how readily energy/tension is released and dissipated.","trait":"Forgiveness","explanation":"High loss coefficient = lets go of tension quickly. Releases grudges, moves on.","psych":"Forgiveness (Enright); Emotion Regulation","mbti":"INFP","mbti_q":"Empathetic, forgiving, emotionally fluid","rank_def":"7 = Most Forgiving","ranks":{"composite":3,"metal":2,"ceramic":1,"polymer":4,"natural":5,"elastomer":6,"foam":7}},{"no":25,"property":"Warm-Cold","symbol":"W-C","unit_m":"perceptual","description":"Perceived warmth vs. coldness of surface — social approachability.","trait":"Approachability","explanation":"Warm materials feel inviting and accessible. Cold feel formal or distant.","psych":"Warmth (Big Five Agreeableness facet)","mbti":"ESFJ","mbti_q":"Warm, welcoming, people-first","rank_def":"7 = Most Approachable","ranks":{"composite":4,"metal":1,"ceramic":2,"polymer":5,"natural":7,"elastomer":6,"foam":3}},{"no":26,"property":"Soft-Hard","symbol":"S-H","unit_m":"perceptual","description":"Perceived hardness — rigidity vs. flexibility in interpersonal boundaries.","trait":"Flexibility vs. Rigidity","explanation":"Hard materials hold firm boundaries. Soft ones accommodate more easily.","psych":"Openness vs. Conscientiousness trade-off","mbti":"ESTJ","mbti_q":"Firm, boundaried, principled","rank_def":"7 = Most Rigid/Firm","ranks":{"composite":5,"metal":6,"ceramic":7,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":27,"property":"Acoustic Brightness","symbol":"Ab","unit_m":"perceptual","description":"Clarity and brightness of sound produced — vibrancy and communicative presence.","trait":"Vibrancy","explanation":"Bright acoustic response = clear, resonant communication. Dull = muted presence.","psych":"Extraversion (Big Five); Expressiveness","mbti":"ESFP","mbti_q":"Expressive, lively, communicative","rank_def":"7 = Most Vibrant","ranks":{"composite":5,"metal":6,"ceramic":7,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":28,"property":"Relative Cost per Unit Volume","symbol":"Cv","unit_m":"index","description":"Economic value per volume — affordability and accessibility to others.","trait":"Affordability","explanation":"Low relative cost = widely accessible, democratic. High = exclusive, rare.","psych":"Social Accessibility; Status Orientation (inverted)","mbti":"ESFJ","mbti_q":"Accessible, generous, community-minded","rank_def":"7 = Most Exclusive/High-Value","ranks":{"composite":7,"metal":5,"ceramic":6,"polymer":3,"natural":1,"elastomer":4,"foam":2}},{"no":29,"property":"Thermal Diffusivity","symbol":"α_d","unit_m":"mm²/s","description":"Rate at which temperature changes propagate — responsiveness to feedback.","trait":"Responsiveness","explanation":"High diffusivity = responds quickly to changes in environment. Reads the room fast.","psych":"Perceptiveness; Emotional Responsiveness","mbti":"ESFP","mbti_q":"Quick to respond, perceptive, reactive","rank_def":"7 = Most Responsive","ranks":{"composite":6,"metal":7,"ceramic":5,"polymer":4,"natural":2,"elastomer":3,"foam":1}},{"no":30,"property":"Eco Friendly/Recyclability","symbol":"Eco","unit_m":"index","description":"Sustainability and circular potential — environmental and social consciousness.","trait":"Sustainability","explanation":"High recyclability = regenerative mindset, leaving things better than you found them.","psych":"Openness + Conscientiousness; Altruism","mbti":"INFJ","mbti_q":"Purposeful, long-term thinker, values-driven","rank_def":"7 = Most Sustainable","ranks":{"composite":3,"metal":4,"ceramic":2,"polymer":5,"natural":7,"elastomer":6,"foam":1}},{"no":31,"property":"Manufacturability Ease","symbol":"Me","unit_m":"index","description":"Ease of shaping — how readily you adapt to new roles and contexts.","trait":"Malleability","explanation":"Easy to manufacture = readily takes on new forms. Difficult = more specialized, less flexible.",  "psych":"Openness to Experience; Adaptability","mbti":"ENTP","mbti_q":"Inventive, flexible, quick to pivot","rank_def":"7 = Most Malleable","ranks":{"composite":2,"metal":4,"ceramic":1,"polymer":7,"natural":3,"elastomer":6,"foam":5}},{"no":32,"property":"Abundance","symbol":"Ab_e","unit_m":"index","description":"Availability in nature — accessibility and ease of connection.","trait":"Accessibility","explanation":"Abundant materials = easy to find, democratic. Rare = exclusive but hard to access.","psych":"Social Openness; Accessibility","mbti":"ESFJ","mbti_q":"Available, open, easy to reach","rank_def":"7 = Most Accessible","ranks":{"composite":2,"metal":5,"ceramic":4,"polymer":6,"natural":7,"elastomer":3,"foam":1}},{"no":33,"property":"Glass Transition Temperature","symbol":"Tg","unit_m":"°C","description":"Temperature at which amorphous material shifts from rigid to rubbery — flexibility threshold.","trait":"Flexibility Threshold","explanation":"How much heat (pressure/change) it takes before you shift from rigid to flexible mode.","psych":"Cognitive Flexibility; Stress Response","mbti":"INTP","mbti_q":"Analytical threshold-crosser, controlled shift","rank_def":"7 = Highest Flexibility Threshold","ranks":{"composite":5,"metal":1,"ceramic":7,"polymer":4,"natural":2,"elastomer":3,"foam":6}},{"no":34,"property":"Ductility/Malleability/Brittleness","symbol":"ε_f","unit_m":"%","description":"Ability to deform without fracture — adaptability vs. fracture under pressure.","trait":"Adaptability vs. Fracture","explanation":"High ductility = bends and stretches without breaking. Brittle = fractures suddenly under load.","psych":"Resilience; Coping Flexibility","mbti":"ESFP","mbti_q":"Flexible, bouncy, doesn't crack under pressure","rank_def":"7 = Most Ductile","ranks":{"composite":4,"metal":7,"ceramic":1,"polymer":3,"natural":2,"elastomer":6,"foam":5}},{"no":35,"property":"Luster","symbol":"Lu","unit_m":"perceptual","description":"Surface reflectivity and shine — presence, charisma, and social visibility.","trait":"Charisma","explanation":"High luster = high social visibility, magnetism. Matte = understated, less attention-seeking.","psych":"Extraversion (Big Five); Social Confidence","mbti":"ESTP","mbti_q":"Charismatic, visible, high-impact presence","rank_def":"7 = Most Charismatic","ranks":{"composite":5,"metal":7,"ceramic":6,"polymer":3,"natural":2,"elastomer":1,"foam":4}},{"no":36,"property":"Chemical Inertness","symbol":"Ci","unit_m":"index","description":"Resistance to chemical reaction — emotional non-reactivity and boundaries.","trait":"Unreactivity","explanation":"High inertness = hard to provoke, maintains self regardless of environment.","psych":"Low Neuroticism; Emotional Regulation","mbti":"ISTP","mbti_q":"Calm, non-reactive, self-contained","rank_def":"7 = Most Unreactive/Stable","ranks":{"composite":5,"metal":1,"ceramic":7,"polymer":6,"natural":3,"elastomer":4,"foam":2}},{"no":37,"property":"Hardness","symbol":"H","unit_m":"Vickers","description":"Resistance to surface indentation — boundary strength and stubbornness.","trait":"Stubbornness","explanation":"Hard materials don't dent easily. High stubbornness = strong boundaries and fixed opinions.","psych":"Low Agreeableness; Assertiveness","mbti":"INTJ","mbti_q":"Firm, boundaried, hard to influence","rank_def":"7 = Most Stubborn/Firm","ranks":{"composite":5,"metal":6,"ceramic":7,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":38,"property":"Translucency/Transparency","symbol":"Tr","unit_m":"perceptual","description":"Degree of transparency — openness, vulnerability, and sharing of inner world.","trait":"Openness","explanation":"Transparent = shares self openly. Opaque = private, hard to read.","psych":"Openness to Experience (Big Five); Vulnerability (Brown)","mbti":"INFP","mbti_q":"Open, expressive, emotionally transparent","rank_def":"7 = Most Transparent/Open","ranks":{"composite":3,"metal":1,"ceramic":7,"polymer":5,"natural":2,"elastomer":4,"foam":6}},{"no":39,"property":"Impact Resistance","symbol":"Ir","unit_m":"J/m","description":"Ability to absorb sudden impact without fracturing — shock absorption.","trait":"Shock Absorption","explanation":"High impact resistance = handles sudden bad news, unexpected changes, crises without shattering.","psych":"Resilience; Hardiness","mbti":"ISTP","mbti_q":"Cool under fire, absorbs shocks, composed","rank_def":"7 = Best Shock Absorber","ranks":{"composite":7,"metal":6,"ceramic":1,"polymer":4,"natural":3,"elastomer":5,"foam":2}},{"no":40,"property":"Tailorable Properties","symbol":"Tp","unit_m":"index","description":"Degree to which properties can be customized — personal versatility.","trait":"Versatility","explanation":"Highly tailorable = can be many things to many people. Fixed = consistent but less adaptable.","psych":"Openness + Extraversion (Big Five)","mbti":"ENTP","mbti_q":"Versatile, multi-talented, context-switching","rank_def":"7 = Most Versatile","ranks":{"composite":7,"metal":3,"ceramic":2,"polymer":5,"natural":1,"elastomer":4,"foam":6}},{"no":41,"property":"Isotropic/Anisotropic","symbol":"Iso","unit_m":"index","description":"Consistency of properties in all directions — behavioral consistency.","trait":"Consistency","explanation":"Isotropic = same in every direction = highly consistent. Anisotropic = different depending on angle.","psych":"Conscientiousness; Reliability (Big Five)","mbti":"ISTJ","mbti_q":"Consistent, reliable, same in every context","rank_def":"7 = Most Consistent","ranks":{"composite":1,"metal":7,"ceramic":6,"polymer":5,"natural":2,"elastomer":3,"foam":4}},{"no":42,"property":"Texture/Surface Smoothability","symbol":"Ts","unit_m":"perceptual","description":"Ease of surface refinement — social polish and tact.","trait":"Politeness","explanation":"Highly smoothable = socially polished, tactful. Rough = authentic but unpolished.","psych":"Agreeableness; Social Tact","mbti":"ESFJ","mbti_q":"Polished, considerate, socially smooth","rank_def":"7 = Most Polished","ranks":{"composite":4,"metal":7,"ceramic":5,"polymer":6,"natural":1,"elastomer":3,"foam":2}}];
+
+/* ══════════════════════════════════════════════════════════
+   MATERIAL CONFIG — colors, symbols, display names
+══════════════════════════════════════════════════════════ */
+const MATERIALS = {
+  composite: { name:'Composite', symbol:'CFRP',  color:'#9a8abf' },
+  metal:     { name:'Metal',     symbol:'Fe',    color:'#8fa8bc' },
+  ceramic:   { name:'Ceramic',   symbol:'Si₃N₄', color:'#c4b59a' },
+  polymer:   { name:'Polymer',   symbol:'C₂H₄',  color:'#6daa7a' },
+  natural:   { name:'Natural',   symbol:'Org',   color:'#8aaa5a' },
+  elastomer: { name:'Elastomer', symbol:'C₄H₆',  color:'#c4835a' },
+  foam:      { name:'Foam',      symbol:'PU',    color:'#7ab8cc' },
+};
+const MAT_ORDER = ['composite','metal','ceramic','polymer','natural','elastomer','foam'];
+
+/* ══════════════════════════════════════════════════════════
+   PAGE BUILDER — reads URL hash and renders the correct material
+   Called on load and on hash change (when user switches materials)
+══════════════════════════════════════════════════════════ */
+function buildPage() {
+  // Read material from URL hash, default to composite
+  const hash = location.hash.replace('#','').toLowerCase();
+  const matKey = MAT_ORDER.includes(hash) ? hash : 'composite';
+  const mat    = MATERIALS[matKey];
+  const prof   = PROFILES[matKey];
+
+  // Set CSS color variable for glow effects
+  document.documentElement.style.setProperty('--mat-color', mat.color);
+
+  // Update page title
+  document.title = 'All About ' + mat.name + ' — Mind My Material';
+
+  // Update active pill in switcher
+  document.querySelectorAll('.mat-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.mat === matKey);
+  });
+
+  const el = document.getElementById('pageContent');
+  el.innerHTML = '';
+  el.className = 'page fade';
+
+  // Sort all properties by this material's rank, descending
+  const sorted = [...PROPS].sort((a,b) => b.ranks[matKey] - a.ranks[matKey]);
+  const top5   = sorted.slice(0, 5);
+  const bot5   = sorted.slice(-5).reverse();
+
+  // Compute average rank for this material
+  const avg = (PROPS.reduce((s,p) => s + p.ranks[matKey], 0) / PROPS.length).toFixed(1);
+  const rankAmong = MAT_ORDER.slice().sort((a,b) =>
+    PROPS.reduce((s,p)=>s+p.ranks[b],0) - PROPS.reduce((s,p)=>s+p.ranks[a],0)
+  ).indexOf(matKey) + 1;
+
+  // ── HERO SECTION ──
+  el.innerHTML += '<span class="eyebrow">Your mental material</span>' +
+    '<div class="mat-symbol">' + mat.symbol + '</div>' +
+    '<h1 class="mat-name">' + mat.name + '</h1>' +
+    '<p class="mat-tagline">' + prof.tagline + '</p>' +
+    '<div class="mat-switcher" id="switcher"></div>';
+
+  // Build switcher pills (done after innerHTML set)
+  const sw = document.getElementById('switcher');
+  MAT_ORDER.forEach(mk => {
+    const m = MATERIALS[mk];
+    const a = document.createElement('a');
+    a.className = 'mat-pill' + (mk === matKey ? ' active' : '');
+    a.dataset.mat = mk;
+    a.href = '#' + mk;
+    a.textContent = m.name;
+    a.style.cssText = 'color:' + m.color + ';border-color:' + m.color;
+    sw.appendChild(a);
+  });
+
+  // ── SECTION 1: WHO YOU ARE ──
+  el.innerHTML +=
+    '<div class="rule"></div>' +
+    '<div class="section">' +
+      '<div class="section-header"><span class="section-num">01</span><h2>Who you are</h2></div>' +
+      '<p style="margin-bottom:14px;">' + prof.summary + '</p>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;">' +
+        '<div class="info-card">' +
+          '<div class="info-card-label">Strengths</div>' +
+          '<div class="info-card-desc">' + prof.strengths + '</div>' +
+        '</div>' +
+        '<div class="info-card">' +
+          '<div class="info-card-label">Challenges</div>' +
+          '<div class="info-card-desc">' + prof.challenges + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  // ── SECTION 2: PSYCH & MBTI ──
+  el.innerHTML +=
+    '<div class="section">' +
+      '<div class="section-header"><span class="section-num">02</span><h2>Psychology & MBTI</h2></div>' +
+      '<div class="info-grid">' +
+        '<div class="info-card"><div class="info-card-label">Archetype</div><div class="info-card-value">' + prof.archetype + '</div></div>' +
+        '<div class="info-card"><div class="info-card-label">Likely MBTI</div><div class="info-card-value">' + prof.mbti + '</div></div>' +
+        '<div class="info-card"><div class="info-card-label">Big Five Alignment</div><div class="info-card-desc">' + prof.psych + '</div></div>' +
+        '<div class="info-card"><div class="info-card-label">Overall Rank (avg)</div>' +
+          '<div class="info-card-value">#' + rankAmong + ' of 7</div>' +
+          '<div class="info-card-desc">Avg property rank: ' + avg + '/7</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  // ── SECTION 3: TOP 5 STRENGTHS ──
+  let top5html = '<div class="trait-grid">';
+  top5.forEach(p => {
+    const pct = Math.round(p.ranks[matKey] / 7 * 100);
+    top5html +=
+      '<div class="trait-card high">' +
+        '<div class="trait-name">' + p.trait + '</div>' +
+        '<div class="trait-prop">' + p.property + ' · ' + p.symbol + '</div>' +
+        '<div class="trait-bar"><div class="trait-bar-fill" style="background:' + mat.color + '" data-pct="' + pct + '"></div></div>' +
+        '<div class="trait-rank">Rank ' + p.ranks[matKey] + '/7 · ' + p.rank_def + '</div>' +
+      '</div>';
+  });
+  top5html += '</div>';
+  el.innerHTML +=
+    '<div class="section">' +
+      '<div class="section-header"><span class="section-num">03</span><h2>Your five strongest traits</h2></div>' +
+      top5html +
+    '</div>';
+
+  // ── SECTION 4: BOTTOM 5 (growth areas) ──
+  let bot5html = '<div class="trait-grid">';
+  bot5.forEach(p => {
+    const pct = Math.round(p.ranks[matKey] / 7 * 100);
+    bot5html +=
+      '<div class="trait-card low">' +
+        '<div class="trait-name">' + p.trait + '</div>' +
+        '<div class="trait-prop">' + p.property + ' · ' + p.symbol + '</div>' +
+        '<div class="trait-bar"><div class="trait-bar-fill" style="background:rgba(122,154,170,0.4)" data-pct="' + pct + '"></div></div>' +
+        '<div class="trait-rank">Rank ' + p.ranks[matKey] + '/7 · ' + p.rank_def + '</div>' +
+      '</div>';
+  });
+  bot5html += '</div>';
+  el.innerHTML +=
+    '<div class="section">' +
+      '<div class="section-header"><span class="section-num">04</span><h2>Growth opportunities</h2></div>' +
+      '<p style="font-size:13px;color:var(--muted);margin-bottom:16px;">The five properties where ' + mat.name + ' ranks lowest — not weaknesses, but areas of greatest potential growth.</p>' +
+      bot5html +
+    '</div>';
+
+  // ── SECTION 5: ALL 43 PROPERTIES ──
+  let allHtml = '<div class="prop-list">';
+  sorted.forEach(p => {
+    const pct = Math.round(p.ranks[matKey] / 7 * 100);
+    allHtml +=
+      '<div class="prop-row">' +
+        '<div><div class="prop-label">' + p.property + '</div><div class="prop-trait">' + p.trait + '</div></div>' +
+        '<div class="prop-bar-track"><div class="prop-bar-fill" style="background:' + mat.color + '" data-pct="' + pct + '"></div></div>' +
+        '<div class="prop-rank-badge">' + p.ranks[matKey] + '</div>' +
+      '</div>';
+  });
+  allHtml += '</div>';
+  el.innerHTML +=
+    '<div class="section">' +
+      '<div class="section-header"><span class="section-num">05</span><h2>All 43 properties</h2></div>' +
+      '<p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Every property ranked 1–7 (7 = highest for that material). Sorted by strength.</p>' +
+      allHtml +
+    '</div>';
+
+  // ── COMPARE CTA ──
+  el.innerHTML +=
+    '<div class="compare-cta">' +
+      '<h2>How do you compare to others?</h2>' +
+      '<p>See all 7 materials ranked side by side across all 43 properties — find out where your material leads, where it lags, and how it stacks up.</p>' +
+      '<a class="btn-primary" href="MindMyMaterial_Compare.html#' + matKey + '">Open Full Comparison →</a>' +
+      '<a class="btn-secondary" href="MindMyMaterial_App_v9.html">Retake the test</a>' +
+    '</div>';
+
+  // Animate bars in after DOM settles
+  setTimeout(() => {
+    document.querySelectorAll('[data-pct]').forEach(b => { b.style.width = b.dataset.pct + '%'; });
+  }, 120);
+}
+
+// Listen for hash changes (user clicks a material pill)
+window.addEventListener('hashchange', buildPage);
+// Build on first load
+window.addEventListener('DOMContentLoaded', buildPage);
+</script>
+</body>
+</html>

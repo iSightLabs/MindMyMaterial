@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  MIND MY MATERIAL — Personality Assessment App              ║
+  ║  iSight Laboratories · InSight Division                     ║
+  ║  Version 8 (file: MindMyMaterial_App_v8.html)               ║
+  ║                                                             ║
+  ║  QUICK EDIT GUIDE:                                          ║
+  ║  • Brand colors    → CSS :root variables (top of <style>)   ║
+  ║  • Material colors → CSS :root --metal, --ceramic, etc.     ║
+  ║  • Logo size       → .logo-wrap { width: Xpx }              ║
+  ║  • Questions       → QUESTION_BANK array in <script>        ║
+  ║  • Material bios   → MATERIALS object in <script>           ║
+  ║  • Patreon/Pay     → #supportSection div (remove display:none) ║
+  ║  • YouTube channel → search "iSightLabs" in <script>        ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mind My Material — What's your mental material?</title>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  MIND MY MATERIAL — Web Assessment App                      ║
+  ║  iSight Laboratories · InSight Division                     ║
+  ║  Version 4.0 · Nathan G. Phillips                           ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  SCORING SYSTEM:
+  ─────────────────────────────────────────────────────────────
+  All 7 material options are shown for every question.
+  User picks ONE "most like me" and ONE "least like me".
+  
+    Most  selected = 6 points
+    Not   selected = 3 points (neutral middle)
+    Least selected = 1 point
+  
+  Per question total: 6 + (5×3) + 1 = 22 points
+  6 questions × 22 points = 132 points total per session
+  Each material's % = (their score / 132) × 100
+  → ALWAYS sums to exactly 100% ✓
+
+  QUESTION BANK:
+  ─────────────────────────────────────────────────────────────
+  Defined in the QUESTION_BANK array in the <script> section.
+  6 domains: Social, Beliefs, Health, Financial, Learning, Time
+  Each domain has 1-2 questions. One is picked randomly per session.
+  Questions are sourced from the __MmM_APP_v3.xlsm database.
+
+  MATERIAL COLORS (CSS variables at top of <style>):
+  ─────────────────────────────────────────────────────────────
+  --metal, --ceramic, --polymer, --elastomer,
+  --composite, --foam, --natural
+  Change these hex values to update the color for each material.
+
+  BRAND COLORS:
+  ─────────────────────────────────────────────────────────────
+  --amber    (#d8973c) — primary accent, buttons, highlights
+  --rust     (#bd632f) — secondary accent, "least" indicator
+  --navy     (#273e47) — dark base, button text
+  --teal     (#335a70) — mid surface
+  --cream    (#e8dfc4) — primary text
+  --bg       (#1a2a32) — page background
+  --surface  (#1f3340) — card backgrounds
+  --surface2 (#253d4d) — hover states
+
+  THINGS YOU CAN EASILY MODIFY:
+  ─────────────────────────────────────────────────────────────
+  1. Material profile text       → MATERIALS object, 'profile' key
+  2. Material taglines           → MATERIALS object, 'tagline' key
+  3. Question text               → QUESTION_BANK array, 'text' key
+  4. Answer options              → QUESTION_BANK array, 'options' array
+  5. Number of questions shown   → QUESTIONS_PER_SESSION constant
+  6. Brand colors                → CSS :root variables
+  7. Material colors             → CSS :root variables (--metal etc)
+  8. YouTube link                → search for 'isightlaboratories' in script
+  9. Share copy text             → copyResult() function at bottom of script
+  10. Email / contact info       → footer section in HTML
+-->
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  /* ══════════════════════════════════════════════════
+     BRAND & MATERIAL COLORS — edit these freely
+  ══════════════════════════════════════════════════ */
+  :root {
+    /* Brand palette */
+    --amber:    #d8973c;
+    --amber-lt: #e8b86d;
+    --rust:     #bd632f;
+    --navy:     #273e47;
+    --teal:     #335a70;
+    --cream:    #e8dfc4;
+    --cream-dk: #c9bfa0;
+
+    /* App surfaces */
+    --bg:       #1a2a32;
+    --surface:  #1f3340;
+    --surface2: #253d4d;
+    --border:   rgba(232,223,196,0.08);
+    --text:     #e8dfc4;
+    --muted:    #7a9aaa;
+
+    /* Material accent colors — change these to restyle each material */
+    --metal:     #8fa8bc;
+    --ceramic:   #c4b59a;
+    --polymer:   #6daa7a;
+    --elastomer: #c4835a;
+    --composite: #9a8abf;
+    --foam:      #7ab8cc;
+    --natural:   #8aaa5a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle ambient gradient — cosmetic only */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(51,90,112,0.35) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 10% 90%, rgba(39,62,71,0.5) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── SCREEN SWITCHING ── */
+  /* Each screen is hidden by default; JS adds 'active' to show it */
+  .screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ══════════════════════════════════════════════════
+     INTRO SCREEN
+  ══════════════════════════════════════════════════ */
+  #intro { align-items: center; justify-content: center; text-align: center; padding: 48px 24px 64px; }
+  .intro-inner { max-width: 640px; width: 100%; }
+
+  /* Logo — increase size by changing max-width here */
+  .logo-wrap {
+    margin: 0 auto 32px;
+    width: 220px;          /* ← LOGO SIZE: change this value */
+    filter: drop-shadow(0 6px 32px rgba(216,151,60,0.25));
+    animation: floatLogo 5s ease-in-out infinite;
+  }
+  @keyframes floatLogo { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .logo-wrap svg { width: 100%; height: auto; }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--amber);
+    font-weight: 500;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .divider { width: 40px; height: 2px; background: var(--amber); margin: 0 auto 20px; opacity: 0.5; }
+
+  /* Intro headline */
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(16px, 3.5vw, 22px);
+    letter-spacing: 0.14em;
+    color: var(--cream-dk);
+    margin-bottom: 14px;
+    font-weight: 400;
+  }
+
+  .tagline {
+    font-size: 16px;
+    color: var(--muted);
+    line-height: 1.75;
+    margin-bottom: 36px;
+    max-width: 460px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .tagline strong { color: var(--cream); font-weight: 400; }
+
+  /* ── MATERIAL CARDS (intro screen) ──
+     These are the eye-catching material display cards.
+     Each card shows the material name, a one-line description,
+     and uses the material's accent color.
+     TO MODIFY: edit .mat-card-grid and .mat-card styles below,
+     or change the card HTML in the #intro section. */
+  .mat-card-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 36px;
+    width: 100%;
+  }
+  @media (max-width: 700px) { .mat-card-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 400px) { .mat-card-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .mat-card {
+    border-radius: 12px;
+    padding: 14px 8px 12px;
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: default;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .mat-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    opacity: 0.06;
+    transition: opacity 0.2s;
+  }
+  .mat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .mat-card:hover::before { opacity: 0.12; }
+
+  .mat-card-symbol {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+  .mat-card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    line-height: 1;
+  }
+  .mat-card-trait {
+    font-size: 10px;
+    opacity: 0.8;
+    line-height: 1.3;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  /* Per-material card colors — controlled via inline style in HTML */
+  .mat-metal     { color: var(--metal);     border-color: var(--metal); }
+  .mat-ceramic   { color: var(--ceramic);   border-color: var(--ceramic); }
+  .mat-polymer   { color: var(--polymer);   border-color: var(--polymer); }
+  .mat-elastomer { color: var(--elastomer); border-color: var(--elastomer); }
+  .mat-composite { color: var(--composite); border-color: var(--composite); }
+  .mat-foam      { color: var(--foam);      border-color: var(--foam); }
+  .mat-natural   { color: var(--natural);   border-color: var(--natural); }
+
+  /* CTA button */
+  .btn-primary {
+    background: var(--amber);
+    color: var(--navy);
+    border: none;
+    padding: 16px 52px;
+    border-radius: 100px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+  .btn-primary:hover {
+    background: var(--amber-lt);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(216,151,60,0.35);
+  }
+  .time-note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+
+  /* ══════════════════════════════════════════════════
+     QUIZ SCREEN
+  ══════════════════════════════════════════════════ */
+  #quiz { padding: 0; }
+
+  /* Sticky progress header */
+  .quiz-header {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .quiz-logo-sm { width: 28px; flex-shrink: 0; }
+  .quiz-logo-sm svg { width: 100%; height: auto; }
+  .progress-wrap { flex: 1; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--rust), var(--amber)); border-radius: 2px; transition: width 0.5s ease; }
+  .progress-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: var(--muted); white-space: nowrap; }
+
+  .quiz-body { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 24px 80px; max-width: 680px; margin: 0 auto; width: 100%; }
+
+  .domain-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+    padding: 4px 14px;
+    border: 1px solid rgba(216,151,60,0.3);
+    border-radius: 100px;
+    margin-bottom: 20px;
+    background: rgba(216,151,60,0.06);
+  }
+
+  .question-text {
+    font-size: clamp(18px, 2.8vw, 24px);
+    font-weight: 300;
+    line-height: 1.5;
+    text-align: center;
+    margin-bottom: 8px;
+    color: var(--cream);
+    max-width: 560px;
+  }
+
+  .instruction { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 24px; }
+  .instruction strong { color: var(--amber); font-weight: 500; }
+
+  /* ── OPTIONS LIST ──
+     All 7 options shown as a vertical list.
+     First tap = Most (amber), second tap = Least (rust).
+     TO MODIFY UX: change .option-card styles below. */
+  .options-list { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-bottom: 20px; }
+
+  .option-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 52px 14px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    user-select: none;
+    text-align: left;
+    animation: fadeUp 0.25s ease both;
+  }
+  /* Staggered entry animation for options */
+  .option-card:nth-child(1){animation-delay:0.02s}
+  .option-card:nth-child(2){animation-delay:0.06s}
+  .option-card:nth-child(3){animation-delay:0.10s}
+  .option-card:nth-child(4){animation-delay:0.14s}
+  .option-card:nth-child(5){animation-delay:0.18s}
+  .option-card:nth-child(6){animation-delay:0.22s}
+  .option-card:nth-child(7){animation-delay:0.26s}
+
+  .option-card:hover { background: var(--surface2); border-color: rgba(232,223,196,0.18); }
+
+  /* Most selected = amber highlight */
+  .option-card.most { border-color: var(--amber); background: rgba(216,151,60,0.1); }
+  /* Least selected = rust highlight */
+  .option-card.least { border-color: var(--rust); background: rgba(189,99,47,0.08); }
+
+  /* MOST / LEAST badge appears top-right when selected */
+  .option-tag {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.15s;
+    padding: 3px 8px;
+    border-radius: 100px;
+    border: 1px solid;
+  }
+  .option-card.most  .option-tag { opacity: 1; color: var(--amber); border-color: rgba(216,151,60,0.4); }
+  .option-card.most  .option-tag::after { content: 'MOST'; }
+  .option-card.least .option-tag { opacity: 1; color: var(--rust); border-color: rgba(189,99,47,0.4); }
+  .option-card.least .option-tag::after { content: 'LEAST'; }
+
+  .option-text { font-size: 15px; line-height: 1.55; color: var(--cream); opacity: 0.9; }
+  .option-card.most  .option-text { opacity: 1; }
+  .option-card.least .option-text { opacity: 0.55; }
+
+  /* Status hint and Next button */
+  .tap-hint { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 16px; min-height: 18px; transition: color 0.2s; }
+  .tap-hint.ready { color: var(--amber); }
+
+  .btn-next { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 13px 36px; border-radius: 100px; font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 0.12em; cursor: pointer; transition: all 0.2s; }
+  .btn-next.ready { border-color: var(--amber); color: var(--amber); }
+  .btn-next.ready:hover { background: var(--amber); color: var(--navy); }
+
+  /* ══════════════════════════════════════════════════
+     RESULT SCREEN
+  ══════════════════════════════════════════════════ */
+  #result { align-items: center; justify-content: flex-start; }
+
+  .result-hero {
+    width: 100%;
+    padding: 52px 24px 44px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Colored glow behind hero — color set via CSS var --mat-color in JS */
+  .result-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 100% at 50% 0%, var(--mat-color) 0%, transparent 65%);
+    opacity: 0.12;
+    pointer-events: none;
+  }
+
+  .result-logo { width: 56px; margin: 0 auto 18px; opacity: 0.75; }
+  .result-logo svg { width: 100%; height: auto; }
+  .result-eyebrow { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .result-symbol { font-family: 'Bebas Neue', sans-serif; font-size: 72px; line-height: 1; margin-bottom: 4px; color: var(--mat-color); letter-spacing: 0.04em; filter: drop-shadow(0 0 20px var(--mat-color)); }
+  .result-name { font-family: 'Bebas Neue', sans-serif; font-size: clamp(42px, 8vw, 68px); letter-spacing: 0.08em; margin-bottom: 14px; color: var(--mat-color); line-height: 1; }
+  .result-tagline { font-size: 16px; color: var(--muted); max-width: 380px; margin: 0 auto; line-height: 1.7; font-style: italic; }
+  .hero-rule { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--amber), transparent); opacity: 0.3; }
+
+  .result-body { max-width: 620px; width: 100%; margin: 0 auto; padding: 36px 24px 80px; }
+  .result-section { margin-bottom: 36px; }
+  .result-section h3 { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.18em; color: var(--amber); margin-bottom: 12px; }
+  .result-section p { font-size: 15px; line-height: 1.85; color: var(--cream); opacity: 0.85; }
+
+  /* Material percentage bars */
+  .mat-breakdown { display: flex; flex-direction: column; gap: 10px; }
+  .mat-row { display: grid; grid-template-columns: 96px 1fr 48px; align-items: center; gap: 12px; }
+  .mat-label { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.08em; }
+  .mat-bar-track { height: 6px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .mat-bar-fill { height: 100%; border-radius: 4px; transition: width 1.2s ease; width: 0%; }
+  .mat-pct { font-size: 13px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Domain summary bars */
+  /* Domain profile — shows how the user's material ranks on
+     the key engineering property for each life domain */
+  .domain-profile { display: flex; flex-direction: column; gap: 16px; }
+
+  .domain-profile-row { display: flex; flex-direction: column; gap: 6px; }
+
+  .domain-profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .domain-profile-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    color: var(--cream);
+  }
+
+  .domain-profile-property {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    font-style: italic;
+    text-align: right;
+  }
+
+  .domain-profile-trait {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 2px;
+    line-height: 1.4;
+  }
+
+  .domain-bar-track {
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .domain-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1.2s ease;
+    width: 0%;
+  }
+
+  .domain-bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 3px;
+  }
+
+  .domain-bar-lo { font-size: 11px; color: var(--muted); opacity: 0.8; letter-spacing: 0.04em; }
+  .domain-bar-hi { font-size: 11px; color: var(--muted); opacity: 0.8; letter-spacing: 0.04em; }
+  .domain-bar-pct { font-size: 13px; color: var(--cream); font-variant-numeric: tabular-nums; text-align: right; }
+
+  /* Share / action buttons */
+  .share-row { display: flex; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
+  .btn-share { flex: 1; min-width: 140px; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--cream); font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .btn-share:hover { background: var(--surface2); border-color: rgba(232,223,196,0.2); }
+  .btn-share.primary { background: var(--amber); color: var(--navy); border-color: var(--amber); }
+  .btn-share.primary:hover { background: var(--amber-lt); }
+  .btn-retake { background: none; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; text-decoration: underline; margin-top: 18px; display: block; text-align: center; width: 100%; transition: color 0.2s; }
+  .btn-retake:hover { color: var(--cream); }
+
+  /* ── SHARED ANIMATIONS ── */
+
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up   { animation: fadeUp 0.55s ease both; }
+  .fade-up-1 { animation: fadeUp 0.55s 0.1s ease both; }
+  .fade-up-2 { animation: fadeUp 0.55s 0.2s ease both; }
+  .fade-up-3 { animation: fadeUp 0.55s 0.3s ease both; }
+  .fade-up-4 { animation: fadeUp 0.55s 0.45s ease both; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════
+     INTRO SCREEN
+     Contains: logo, tagline, material cards, CTA button
+════════════════════════════════════════════════ -->
+<div id="intro" class="screen active">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:48px 24px 64px;text-align:center;">
+    <div class="intro-inner">
+
+      <!-- Logo — size controlled by .logo-wrap width in CSS -->
+      <div class="logo-wrap fade-up">
+        <svg id="outerlayer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 251.71 236.21">
+  
+  <text font-size="42.59" font-family="BebasNeue-Regular,'Bebas Neue'" fill="#e8dfc4" transform="translate(100.02 227.15)"><tspan x="0" y="0">M</tspan><tspan letter-spacing="-.05em" x="22.91" y="0">A</tspan><tspan x="38.03" y="0">TERIAL</tspan></text>
+  <text font-size="42.59" font-family="BebasNeue-Regular,'Bebas Neue'" fill="#e8dfc4" transform="translate(0 227.69)"><tspan x="0" y="0">MIND</tspan></text>
+  <text font-size="29.28" font-family="BebasNeue-Regular,'Bebas Neue'" fill="#e8dfc4" transform="translate(68.97 227.53)"><tspan x="0" y="0">MY</tspan></text>
+  <g>
+    <path fill="#273e47" d="M32.52,151.32c-2.42,4.34,1.94,11.27,4.74,14.45,3.27,3.7,7.07,5.3,9.03,6.09,4.65,1.89,8.94,2.08,12.87,2.26,6.39.29,9.25.23,9.26.23,3.8-.08,6.21-.34,7.22,1.13.71,1.03.44,2.46.23,3.61-.29,1.56-.96,2.62-2.03,4.29-1.21,1.88-1.52,1.96-2.48,3.39-1.65,2.45-3.14,4.66-2.71,7.22.35,2.09,1.8,3.42,2.26,3.84,1.65,1.51,3.49,1.82,4.74,2.03,1.1.18,4.06.68,6.55-.9,1.57-1,2.3-2.41,2.71-3.16,2.36-4.37,5.15-7.64,10.38-13.77,3.29-3.86,5.84-6.04,7-7,2.63-2.17,4.69-3.41,5.42-3.84,2.41-1.41,3.5-1.66,4.97-2.48,3.69-2.07,7.61-5.94,7.67-7.9.11-2.99-8.47-7.65-50.11-14.67-10.14-.03-18.45.55-24.38,1.13-9.09.88-12,1.69-13.32,4.06Z"/>
+    <path fill="#e8dfc4" d="M104.99,168.02c.09.3,2.08.08,3.84-.45.78-.23,2.23-.74,3.84-1.81.57-.38,2.03-1.4,3.39-3.16.74-.96,1.42-1.85,1.13-2.37-.32-.58-1.75-.56-2.82-.11-1.27.53-1.36,1.36-3.27,3.39-.45.48-1.3,1.37-2.48,2.26-2.11,1.59-3.69,1.98-3.61,2.26Z"/>
+    <path fill="#e8dfc4" d="M106.23,156.4c3.75-.08,4.45.8,4.63,1.24.69,1.72-3.25,4.96-5.87,6.55-2.11,1.28-4.08,1.92-5.42,2.26"/>
+    <path fill="#e8dfc4" d="M92.46,151.66c.35-.42,1.48-.02,3.72.79,2.07.74,3.1,1.12,3.72,2.14.63,1.04.8,2.59.11,3.72-.17.28-.45.74-.9.9-2.26.81-7.64-6.38-6.66-7.56Z"/>
+    <path fill="#e8dfc4" d="M84.9,150.75c.42-.52,2.06-.14,3.16.68.9.67,1.12,1.4,1.92,2.71,0,0,.81,1.35,2.6,3.39,2.8,3.21,6.01,3.94,5.87,4.29-.16.4-4.61-.13-8.13-3.05-1.32-1.09-2.11-2.19-3.39-3.95-1.12-1.54-2.51-3.47-2.03-4.06Z"/>
+    <path fill="#e8dfc4" d="M79.59,162.27c.51-.1,1.42-.13,1.58.23.16.36-.48.99-2.82,2.93-1.98,1.64-2.98,2.47-3.5,2.82-1.29.88-3.29,2.23-5.87,2.93-3.9,1.06-7.96.3-8.01-.34-.03-.4,1.53-.51,5.42-1.92,2.93-1.06,5.59-2.02,8.01-3.61,1.14-.75,2.47-1.24,3.5-2.14.24-.21.82-.73,1.69-.9Z"/>
+    <path fill="#e8dfc4" d="M60.52,156.51c.87-.42,1.46-.29,3.39-.34,3.19-.08,3.99-.48,4.18-.11.43.83-3.38,3.58-5.76,5.3-3.41,2.46-5.84,3.75-7.9,4.64-.35.15-2.3.97-4.97,1.35-.99.14-2.36.34-2.48,0-.15-.42,1.81-1.21,4.74-3.16,3.61-2.4,5.41-3.6,6.66-5.42.56-.83,1.03-1.72,2.14-2.26Z"/>
+    <path fill="#e8dfc4" d="M76.54,150.08c.56-.85,3.07-.61,4.51.68.42.37.37.51,1.47,2.48.78,1.4,1.28,2.3,1.98,3.27.6.85.79.96,2.2,2.6,1.87,2.17,2.81,3.26,2.71,3.39-.41.55-7.08-2.97-11.4-8.92-1.91-2.62-1.6-3.3-1.47-3.5Z"/>
+    <path fill="#e8dfc4" d="M88.39,166.56c.4-.09.46.04,2.6.56,1.98.49,2.32.47,2.48.79.41.81-1.04,2.49-2.37,3.5-3.36,2.55-8.17,2.49-8.47,1.58-.17-.52,1.31-.8,3.05-3.05,1.45-1.87,1.54-3.11,2.71-3.39Z"/>
+    <path fill="#e8dfc4" d="M74.57,171.97c-.06-.34,1.13-.53,3.16-1.86.74-.48,1.75-1.15,2.82-2.26,1.27-1.32,2.03-2.2,2.03-2.2.68-.78.98-1.19,1.52-1.24.6-.05,1.29.34,1.47.9.13.41-.06.82-.51,1.52-.77,1.21-1.16,1.81-2.09,2.65-1.15,1.04-2.36,2.14-4.23,2.65-1.97.54-4.1.27-4.18-.17Z"/>
+    <path fill="#e8dfc4" d="M72.14,156.85c.92-.43,1.88-.19,2.14-.11.75.22,1.2.65,1.69,1.13.75.72,1.22,1.17,1.24,1.69.03.88-1.24,1.46-5.19,3.5-3.61,1.86-3.54,1.89-4.85,2.48-1.61.73-3.13,1.42-5.19,2.03-2.37.7-5.2,1.23-5.3.9-.08-.25,1.55-.77,4.29-2.26,2.64-1.43,4.75-2.58,6.77-4.63,1.75-1.78,2.63-2.67,2.93-3.16.35-.55.69-1.21,1.47-1.58Z"/>
+    <path fill="#e8dfc4" d="M43.59,164.86c.46.1,2.06.37,5.98-1.81,1.34-.74,2.4-1.51,4.51-3.05,2.44-1.78,2.53-2.03,2.48-2.14-.22-.5-3.49.44-5.42,1.13-2.53.9-1.83,1.03-6.66,3.27-1.39.65-2.54,1.14-2.48,1.69.06.56,1.33.85,1.58.9Z"/>
+    <path fill="#e8dfc4" d="M38.62,158.15c.27-.55.73-.78,2.26-1.47,2.05-.92,3.08-1.38,3.78-1.64,2.45-.89,3.68-1.34,5.14-1.75,2.74-.77,4.8-1.08,8.92-1.69,1.87-.28,3.29-.43,4.43-.53.99-.09,1.71-.13,1.89-.14,5.38-.32,6.09.4,6.32.68.35.43.58,1.1.34,1.47-.28.43-1.01.21-3.16.23-.51,0-1.38,0-2.48.11-.89.08-1.16.16-2.6.34-1,.12-1.66.19-2.03.23-4.19.44-8.35,1.47-8.35,1.47-1.52.51-3.29.82-5.53,1.69-2.43.95-3.65,1.42-4.91,2.37-1.65,1.24-2.11,2.21-2.88,2.03-.98-.23-1.72-2.17-1.13-3.39Z"/>
+    <path fill="#e8dfc4" d="M36.25,153.07c.28-1.02,1.46-1.47,4.18-2.37,3.32-1.1,4.98-1.65,6.09-1.92,4.14-1.01,7.3-1.41,8.92-1.58,1.44-.15,3.87-.37,6.88.11.47.08,2.04.33,2.03.56-.01.32-2.87.22-7.56.9-1.86.27-3.2.54-3.84.68-.95.2-2.53.54-4.4,1.13-1.24.39-3.19,1.01-5.42,2.14-3.6,1.83-4.71,3.36-5.87,2.82-.82-.38-1.26-1.61-1.02-2.48Z"/>
+    <path fill="#273e47" d="M47.58,29.55c3.89-2.96,7.2-5.09,8.22-5.74,1.92-1.23,6.43-4.09,11.81-6.65,8.01-3.81,14.77-5.42,20.77-6.8,5.04-1.16,15.93-3.36,30.04-3.47,9.76-.08,17.2.87,22.12,1.51,4.59.6,10.95,1.46,19.13,3.63,4.29,1.14,10.44,2.79,17.86,6.12,5.5,2.46,13.17,5.97,21.45,13.07,3.03,2.6,10.76,9.64,17.26,21.08,2,3.51,4.85,8.61,6.87,16.01,1.03,3.78,2.68,11.22,2.09,20.7-.29,4.6-.71,10.61-3.74,17.68-1.29,3.03-4.37,9.67-11.36,15.11-4.27,3.32-8.28,4.84-9.79,5.36-1.91.66-6.76,2.3-13.08,2.04-5.59-.23-8.36-1.8-10.16,0-1.03,1.03-.97,2.34-1.05,5.59-.19,7.69-.28,11.53-1.34,14.35-1.38,3.66-4.09,5.59-7.92,8.31-6.05,4.3-11.93,5.51-16.21,6.35-3.82.75-10.08,1.55-18.01.6-1.76-.21-3.17-.46-4.5-.78-1.08-.26-4.08-.98-7.75-2.58-.06-.03-.11-.05-.12-.05-6.56-2.87-15.58-5.36-15.58-5.36-16.39-4.52-14.45-4.24-17.93-4.99-4.62-.99-9.32-1.99-15.69-2.49-3.52-.28-13.1-.99-22.64.91-5.6,1.11-8.59,2.04-8.59,2.04-1.75.58-2.45.89-3.91,1.34-.21.06-.51.15-.89.25,0,0-.92.23-1.92.38-3.33.52-5.94.22-6.95.08-3.15-.44-5.45-1.43-6.28-1.81-.99-.46-4.42-2.13-8.07-6.35-2.62-3.03-5.84-7.94-8.07-16.62-.62-2.4-3.35-13.61-.93-29.21,1.84-11.91,5.75-20.38,8.18-25.55,6.38-13.58,14.06-22.34,18.38-27.19,1.3-1.46,8.3-9.25,18.31-16.85Z"/>
+    <path fill="#e8dfc4" d="M73.5,190.03c-.39.94-.87,2.13-.45,3.5.57,1.85,2.34,2.61,2.6,2.71,1.34.55,2.58.29,3.16.11,1.3-.39,2.07-1.23,3.5-3.05,1.92-2.43,3.01-4.06,3.99-5.41,1.36-1.87,2.45-3.09,4.02-4.86,1.82-2.05,3.75-4.03,6.21-6.55,2.72-2.78,4.18-4.21,3.84-4.74-.2-.31-.76.03-2.82,0-1.65-.03-2.12-.26-2.82.11-.67.36-.73.83-1.35,1.69,0,0-1.29,1.79-3.39,2.71-1.16.51-2.21.53-4.29.56-2.65.05-3.06-.36-3.84.11-1.18.72-.69,1.95-1.81,4.4-.64,1.4-1.63,2.55-3.61,4.85-1.68,1.95-2.33,2.4-2.93,3.84Z"/>
+    <path fill="#335a70" d="M55.14,36.38c3.4-2.49,6.28-4.29,7.18-4.84,1.67-1.03,5.61-3.45,10.31-5.6,6.99-3.21,12.89-4.57,18.14-5.73,4.4-.98,13.91-2.83,26.22-2.93,8.52-.07,15.02.73,19.31,1.27,4.01.51,9.56,1.23,16.7,3.06,3.74.96,9.11,2.35,15.59,5.16,4.8,2.08,11.5,5.03,18.72,11.01,2.65,2.19,9.39,8.12,15.07,17.76,1.74,2.96,4.24,7.26,6,13.5.9,3.18,2.34,9.45,1.83,17.44-.25,3.88-.62,8.94-3.26,14.9-1.13,2.55-3.81,8.15-9.92,12.73-3.73,2.8-7.23,4.08-8.55,4.52-1.67.56-5.9,1.94-11.42,1.72-4.88-.2-7.3-1.52-8.87,0-.9.87-.84,1.98-.91,4.71-.16,6.48-.25,9.72-1.17,12.09-1.2,3.08-3.57,4.71-6.91,7-5.28,3.62-10.42,4.64-14.16,5.35-3.34.63-8.8,1.31-15.72.51-7.07-.82-7.66-2.26-24.4-7.38-8.98-2.75-13.29-3.71-15.66-4.2-4.04-.84-8.13-1.67-13.7-2.1-3.07-.24-11.43-.83-19.77.76-4.89.94-7.5,1.72-7.5,1.72-2.71.88-3.6,1.32-5.87,1.66-2.91.43-5.18.18-6.07.06-2.75-.37-4.76-1.21-5.48-1.53-.87-.38-3.86-1.79-7.05-5.35-2.28-2.55-5.1-6.69-7.05-14-.54-2.02-2.92-11.47-.82-24.62,1.61-10.04,5.02-17.18,7.14-21.53,5.57-11.45,12.27-18.82,16.05-22.92,1.13-1.23,7.25-7.8,15.98-14.2Z"/>
+    <path fill="#bd632f" d="M63.38,43.32c2.91-2.06,5.37-3.55,6.13-4,1.43-.85,4.79-2.85,8.81-4.63,5.98-2.65,11.02-3.77,15.5-4.74,3.76-.81,11.89-2.34,22.41-2.42,7.28-.06,12.83.6,16.5,1.05,3.43.42,8.17,1.01,14.27,2.53,3.2.79,7.79,1.95,13.32,4.26,4.1,1.72,9.82,4.16,16,9.1,2.26,1.81,8.03,6.71,12.88,14.68,1.49,2.44,3.62,6,5.13,11.16.77,2.63,2,7.82,1.56,14.42-.21,3.2-.53,7.39-2.79,12.31-.97,2.11-3.26,6.74-8.47,10.52-3.18,2.31-6.18,3.37-7.3,3.74-1.42.46-5.04,1.6-9.76,1.42-4.17-.16-6.24-1.25-7.58,0-.77.72-.72,1.63-.78,3.89-.14,5.35-.21,8.03-1,10-1.03,2.55-3.05,3.89-5.91,5.79-4.51,2.99-8.9,3.84-12.1,4.42-2.85.52-7.52,1.08-13.43.42-6.04-.68-6.55-1.87-20.85-6.1-7.67-2.27-11.36-3.07-13.38-3.47-3.45-.69-6.95-1.38-11.71-1.74-2.62-.19-9.77-.69-16.89.63-4.18.77-6.41,1.42-6.41,1.42-2.31.73-3.07,1.09-5.02,1.37-2.48.36-4.43.15-5.18.05-2.35-.31-4.07-1-4.68-1.26-.74-.32-3.3-1.48-6.02-4.42-1.95-2.11-4.36-5.53-6.02-11.58-.46-1.67-2.5-9.48-.7-20.35,1.37-8.3,4.29-14.2,6.1-17.8,4.76-9.46,10.49-15.56,13.71-18.94.97-1.01,6.19-6.44,13.66-11.73Z"/>
+    <path fill="#d8973c" d="M72.51,50.62c2.41-1.63,4.46-2.8,5.09-3.16,1.19-.67,3.98-2.25,7.31-3.66,4.96-2.1,9.14-2.98,12.86-3.74,3.12-.64,9.86-1.85,18.6-1.91,6.04-.04,10.65.48,13.69.83,2.84.33,6.78.8,11.84,2,2.65.63,6.46,1.54,11.06,3.37,3.4,1.36,8.15,3.28,13.28,7.19,1.88,1.43,6.66,5.31,10.69,11.6,1.24,1.93,3,4.74,4.26,8.82.64,2.08,1.66,6.18,1.3,11.4-.18,2.53-.44,5.84-2.31,9.73-.8,1.67-2.7,5.32-7.03,8.32-2.64,1.83-5.12,2.66-6.06,2.95-1.18.37-4.18,1.27-8.09,1.12-3.46-.13-5.18-.99-6.29,0-.64.57-.6,1.29-.65,3.08-.12,4.23-.17,6.35-.83,7.9-.85,2.01-2.53,3.08-4.9,4.57-3.74,2.37-7.39,3.03-10.04,3.49-2.37.41-6.24.86-11.15.33-5.01-.53-5.43-1.47-17.3-4.82-6.36-1.8-9.43-2.42-11.1-2.74-2.86-.55-5.77-1.09-9.71-1.37-2.18-.15-8.11-.54-14.02.5-3.47.61-5.32,1.12-5.32,1.12-1.92.58-2.55.86-4.16,1.08-2.06.28-3.68.12-4.3.04-1.95-.24-3.37-.79-3.89-1-.61-.25-2.74-1.17-5-3.49-1.62-1.67-3.62-4.37-5-9.15-.38-1.32-2.07-7.49-.58-16.08,1.14-6.56,3.56-11.22,5.07-14.07,3.95-7.48,8.7-12.3,11.38-14.97.8-.8,5.14-5.09,11.33-9.27Z"/>
+    <path fill="#6daa7a" d="M82.32,58.14c1.92-1.16,3.54-2,4.04-2.26.94-.48,3.16-1.61,5.81-2.61,3.94-1.5,7.27-2.13,10.22-2.67,2.48-.46,7.84-1.32,14.78-1.37,4.8-.03,8.46.34,10.88.59,2.26.24,5.39.57,9.41,1.43,2.11.45,5.14,1.1,8.79,2.41,2.71.97,6.48,2.35,10.55,5.14,1.49,1.02,5.29,3.79,8.49,8.29.98,1.38,2.39,3.39,3.38,6.3.51,1.49,1.32,4.41,1.03,8.14-.14,1.81-.35,4.17-1.84,6.95-.64,1.19-2.15,3.8-5.59,5.94-2.1,1.31-4.07,1.9-4.82,2.11-.94.26-3.33.9-6.43.8-2.75-.09-4.11-.71-5,0-.51.4-.48.92-.51,2.2-.09,3.02-.14,4.53-.66,5.64-.68,1.44-2.01,2.2-3.9,3.27-2.97,1.69-5.87,2.17-7.98,2.5-1.88.29-4.96.61-8.86.24-3.99-.38-4.32-1.05-13.75-3.45-5.06-1.28-7.49-1.73-8.82-1.96-2.28-.39-4.59-.78-7.72-.98-1.73-.11-6.44-.39-11.14.36-2.76.44-4.23.8-4.23.8-1.53.41-2.03.61-3.31.77-1.64.2-2.92.09-3.42.03-1.55-.17-2.68-.56-3.09-.71-.49-.18-2.18-.84-3.97-2.5-1.29-1.19-2.87-3.12-3.97-6.54-.3-.94-1.65-5.35-.46-11.49.91-4.68,2.83-8.02,4.03-10.05,3.14-5.34,6.92-8.78,9.05-10.69.64-.57,4.08-3.64,9.01-6.62Z"/>
+    <path fill="#9a8abf" d="M91.65,64.51c1.37-.83,2.52-1.43,2.88-1.61.67-.34,2.25-1.15,4.14-1.86,2.81-1.07,5.18-1.52,7.28-1.9,1.77-.32,5.59-.94,10.53-.97,3.42-.02,6.03.24,7.75.42,1.61.17,3.84.41,6.71,1.02,1.5.32,3.66.78,6.26,1.71,1.93.69,4.62,1.67,7.52,3.66,1.06.73,3.77,2.7,6.05,5.91.7.98,1.7,2.41,2.41,4.49.36,1.06.94,3.14.73,5.8-.1,1.29-.25,2.97-1.31,4.95-.45.85-1.53,2.71-3.98,4.23-1.5.93-2.9,1.36-3.43,1.5-.67.19-2.37.64-4.58.57-1.96-.06-2.93-.5-3.56,0-.36.29-.34.66-.37,1.57-.07,2.15-.1,3.23-.47,4.02-.48,1.03-1.43,1.57-2.78,2.33-2.12,1.2-4.18,1.54-5.68,1.78-1.34.21-3.54.44-6.31.17-2.84-.27-3.08-.75-9.8-2.46-3.6-.91-5.34-1.23-6.29-1.4-1.62-.28-3.27-.56-5.5-.7-1.23-.08-4.59-.28-7.94.25-1.96.31-3.01.57-3.01.57-1.09.29-1.44.44-2.36.55-1.17.14-2.08.06-2.44.02-1.11-.12-1.91-.4-2.2-.51-.35-.13-1.55-.6-2.83-1.78-.92-.85-2.05-2.23-2.83-4.66-.22-.67-1.17-3.81-.33-8.19.65-3.34,2.02-5.71,2.87-7.16,2.24-3.81,4.93-6.26,6.44-7.62.45-.41,2.91-2.59,6.42-4.72Z"/>
+    <path fill="#e8dfc4" d="M100.77,70.74c.83-.5,1.53-.86,1.74-.97.41-.21,1.36-.69,2.51-1.13,1.7-.65,3.13-.92,4.41-1.15,1.07-.2,3.38-.57,6.37-.59,2.07-.01,3.65.15,4.69.26.97.1,2.32.25,4.06.61.91.19,2.21.47,3.79,1.04,1.17.42,2.79,1.01,4.55,2.22.64.44,2.28,1.63,3.66,3.57.42.6,1.03,1.46,1.46,2.72.22.64.57,1.9.44,3.51-.06.78-.15,1.8-.79,3-.27.51-.93,1.64-2.41,2.56-.91.56-1.76.82-2.08.91-.4.11-1.43.39-2.77.35-1.19-.04-1.77-.31-2.16,0-.22.17-.21.4-.22.95-.04,1.3-.06,1.96-.29,2.43-.29.62-.87.95-1.68,1.41-1.28.73-2.53.93-3.44,1.08-.81.13-2.14.26-3.82.1-1.72-.16-1.86-.45-5.93-1.49-2.18-.55-3.23-.75-3.81-.85-.98-.17-1.98-.34-3.33-.42-.75-.05-2.78-.17-4.8.15-1.19.19-1.82.35-1.82.35-.66.18-.87.26-1.43.33-.71.09-1.26.04-1.47.01-.67-.08-1.16-.24-1.33-.31-.21-.08-.94-.36-1.71-1.08-.56-.51-1.24-1.35-1.71-2.82-.13-.41-.71-2.31-.2-4.95.39-2.02,1.22-3.46,1.74-4.33,1.35-2.3,2.98-3.79,3.9-4.61.27-.25,1.76-1.57,3.88-2.86Z"/>
+  </g>
+</svg>
+      </div>
+
+      <div class="divider fade-up-1"></div>
+      <p class="eyebrow fade-up-1">iSight Laboratories · InSight Division</p>
+      <h1 class="fade-up-2">Discover your mental material</h1>
+      <p class="tagline fade-up-2">Every person has a <strong>mental material</strong>. Discover yours through 6 scenarios drawn from the science of materials — and understand why you respond to life the way you do.</p>
+
+      <!-- ── MATERIAL CARDS ──
+           7 cards displayed on the intro screen, one per material.
+           TO EDIT: change symbol, name, or trait text in each .mat-card div.
+           TO REORDER: drag the card blocks into a different order.
+           Colors are controlled by CSS classes (.mat-metal, .mat-ceramic, etc.)
+           defined in the <style> section under "Per-material card colors".
+      -->
+      <!--
+        MATERIAL CARDS — displayed on the intro screen
+        Each card: symbol (chemical notation), name, one-word trait
+        TO MODIFY: change the text inside each .mat-card div
+        TO ADD A MATERIAL: duplicate a card and change the class to mat-[name]
+        and add a color variable in CSS :root
+      -->
+      <div class="mat-card-grid fade-up-3">
+        <div class="mat-card mat-metal">
+          <span class="mat-card-symbol">Fe</span>
+          <span class="mat-card-name">Metal</span>
+          <span class="mat-card-trait">Resilient · Dependable</span>
+        </div>
+        <div class="mat-card mat-ceramic">
+          <span class="mat-card-symbol">Si₃N₄</span>
+          <span class="mat-card-name">Ceramic</span>
+          <span class="mat-card-trait">Refined · Precise</span>
+        </div>
+        <div class="mat-card mat-polymer">
+          <span class="mat-card-symbol">C₂H₄</span>
+          <span class="mat-card-name">Polymer</span>
+          <span class="mat-card-trait">Adaptable · Practical</span>
+        </div>
+        <div class="mat-card mat-elastomer">
+          <span class="mat-card-symbol">C₄H₆</span>
+          <span class="mat-card-name">Elastomer</span>
+          <span class="mat-card-trait">Bouncy · Resilient</span>
+        </div>
+        <div class="mat-card mat-composite">
+          <span class="mat-card-symbol">CFRP</span>
+          <span class="mat-card-name">Composite</span>
+          <span class="mat-card-trait">Complex · Balanced</span>
+        </div>
+        <div class="mat-card mat-foam">
+          <span class="mat-card-symbol">PU</span>
+          <span class="mat-card-name">Foam</span>
+          <span class="mat-card-trait">Gentle · Absorbing</span>
+        </div>
+        <div class="mat-card mat-natural">
+          <span class="mat-card-symbol">Org</span>
+          <span class="mat-card-name">Natural</span>
+          <span class="mat-card-trait">Grounded · Warm</span>
+        </div>
+      </div>
+
+      <button class="btn-primary fade-up-4" id="startBtn">Find My Material</button>
+      <p class="time-note fade-up-4">7 options · 6 questions · about 4 minutes</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     QUIZ SCREEN
+     Rendered dynamically by renderQuestion() in JS
+════════════════════════════════════════════════ -->
+<div id="quiz" class="screen">
+  <div class="quiz-header">
+    <!-- Small logo in quiz header -->
+    <div class="quiz-logo-sm">
+      <svg id="outerlayer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 251.71 236.21">
+  
+  <text font-size="42.59" font-family="BebasNeue-Regular,'Bebas Neue'" fill="#e8dfc4" transform="translate(100.02 227.15)"><tspan x="0" y="0">M</tspan><tspan letter-spacing="-.05em" x="22.91" y="0">A</tspan><tspan x="38.03" y="0">TERIAL</tspan></text>
+  <text font-size="42.59" font-family="BebasNeue-Regular,'Bebas Neue'" fill="#e8dfc4" transform="translate(0 227.69)"><tspan x="0" y="0">MIND</tspan></text>
+  <text font-size="29.28" font-family="BebasNeue-Regular,'Bebas Neue'" fill="#e8dfc4" transform="translate(68.97 227.53)"><tspan x="0" y="0">MY</tspan></text>
+  <g>
+    <path fill="#273e47" d="M32.52,151.32c-2.42,4.34,1.94,11.27,4.74,14.45,3.27,3.7,7.07,5.3,9.03,6.09,4.65,1.89,8.94,2.08,12.87,2.26,6.39.29,9.25.23,9.26.23,3.8-.08,6.21-.34,7.22,1.13.71,1.03.44,2.46.23,3.61-.29,1.56-.96,2.62-2.03,4.29-1.21,1.88-1.52,1.96-2.48,3.39-1.65,2.45-3.14,4.66-2.71,7.22.35,2.09,1.8,3.42,2.26,3.84,1.65,1.51,3.49,1.82,4.74,2.03,1.1.18,4.06.68,6.55-.9,1.57-1,2.3-2.41,2.71-3.16,2.36-4.37,5.15-7.64,10.38-13.77,3.29-3.86,5.84-6.04,7-7,2.63-2.17,4.69-3.41,5.42-3.84,2.41-1.41,3.5-1.66,4.97-2.48,3.69-2.07,7.61-5.94,7.67-7.9.11-2.99-8.47-7.65-50.11-14.67-10.14-.03-18.45.55-24.38,1.13-9.09.88-12,1.69-13.32,4.06Z"/>
+    <path fill="#e8dfc4" d="M104.99,168.02c.09.3,2.08.08,3.84-.45.78-.23,2.23-.74,3.84-1.81.57-.38,2.03-1.4,3.39-3.16.74-.96,1.42-1.85,1.13-2.37-.32-.58-1.75-.56-2.82-.11-1.27.53-1.36,1.36-3.27,3.39-.45.48-1.3,1.37-2.48,2.26-2.11,1.59-3.69,1.98-3.61,2.26Z"/>
+    <path fill="#e8dfc4" d="M106.23,156.4c3.75-.08,4.45.8,4.63,1.24.69,1.72-3.25,4.96-5.87,6.55-2.11,1.28-4.08,1.92-5.42,2.26"/>
+    <path fill="#e8dfc4" d="M92.46,151.66c.35-.42,1.48-.02,3.72.79,2.07.74,3.1,1.12,3.72,2.14.63,1.04.8,2.59.11,3.72-.17.28-.45.74-.9.9-2.26.81-7.64-6.38-6.66-7.56Z"/>
+    <path fill="#e8dfc4" d="M84.9,150.75c.42-.52,2.06-.14,3.16.68.9.67,1.12,1.4,1.92,2.71,0,0,.81,1.35,2.6,3.39,2.8,3.21,6.01,3.94,5.87,4.29-.16.4-4.61-.13-8.13-3.05-1.32-1.09-2.11-2.19-3.39-3.95-1.12-1.54-2.51-3.47-2.03-4.06Z"/>
+    <path fill="#e8dfc4" d="M79.59,162.27c.51-.1,1.42-.13,1.58.23.16.36-.48.99-2.82,2.93-1.98,1.64-2.98,2.47-3.5,2.82-1.29.88-3.29,2.23-5.87,2.93-3.9,1.06-7.96.3-8.01-.34-.03-.4,1.53-.51,5.42-1.92,2.93-1.06,5.59-2.02,8.01-3.61,1.14-.75,2.47-1.24,3.5-2.14.24-.21.82-.73,1.69-.9Z"/>
+    <path fill="#e8dfc4" d="M60.52,156.51c.87-.42,1.46-.29,3.39-.34,3.19-.08,3.99-.48,4.18-.11.43.83-3.38,3.58-5.76,5.3-3.41,2.46-5.84,3.75-7.9,4.64-.35.15-2.3.97-4.97,1.35-.99.14-2.36.34-2.48,0-.15-.42,1.81-1.21,4.74-3.16,3.61-2.4,5.41-3.6,6.66-5.42.56-.83,1.03-1.72,2.14-2.26Z"/>
+    <path fill="#e8dfc4" d="M76.54,150.08c.56-.85,3.07-.61,4.51.68.42.37.37.51,1.47,2.48.78,1.4,1.28,2.3,1.98,3.27.6.85.79.96,2.2,2.6,1.87,2.17,2.81,3.26,2.71,3.39-.41.55-7.08-2.97-11.4-8.92-1.91-2.62-1.6-3.3-1.47-3.5Z"/>
+    <path fill="#e8dfc4" d="M88.39,166.56c.4-.09.46.04,2.6.56,1.98.49,2.32.47,2.48.79.41.81-1.04,2.49-2.37,3.5-3.36,2.55-8.17,2.49-8.47,1.58-.17-.52,1.31-.8,3.05-3.05,1.45-1.87,1.54-3.11,2.71-3.39Z"/>
+    <path fill="#e8dfc4" d="M74.57,171.97c-.06-.34,1.13-.53,3.16-1.86.74-.48,1.75-1.15,2.82-2.26,1.27-1.32,2.03-2.2,2.03-2.2.68-.78.98-1.19,1.52-1.24.6-.05,1.29.34,1.47.9.13.41-.06.82-.51,1.52-.77,1.21-1.16,1.81-2.09,2.65-1.15,1.04-2.36,2.14-4.23,2.65-1.97.54-4.1.27-4.18-.17Z"/>
+    <path fill="#e8dfc4" d="M72.14,156.85c.92-.43,1.88-.19,2.14-.11.75.22,1.2.65,1.69,1.13.75.72,1.22,1.17,1.24,1.69.03.88-1.24,1.46-5.19,3.5-3.61,1.86-3.54,1.89-4.85,2.48-1.61.73-3.13,1.42-5.19,2.03-2.37.7-5.2,1.23-5.3.9-.08-.25,1.55-.77,4.29-2.26,2.64-1.43,4.75-2.58,6.77-4.63,1.75-1.78,2.63-2.67,2.93-3.16.35-.55.69-1.21,1.47-1.58Z"/>
+    <path fill="#e8dfc4" d="M43.59,164.86c.46.1,2.06.37,5.98-1.81,1.34-.74,2.4-1.51,4.51-3.05,2.44-1.78,2.53-2.03,2.48-2.14-.22-.5-3.49.44-5.42,1.13-2.53.9-1.83,1.03-6.66,3.27-1.39.65-2.54,1.14-2.48,1.69.06.56,1.33.85,1.58.9Z"/>
+    <path fill="#e8dfc4" d="M38.62,158.15c.27-.55.73-.78,2.26-1.47,2.05-.92,3.08-1.38,3.78-1.64,2.45-.89,3.68-1.34,5.14-1.75,2.74-.77,4.8-1.08,8.92-1.69,1.87-.28,3.29-.43,4.43-.53.99-.09,1.71-.13,1.89-.14,5.38-.32,6.09.4,6.32.68.35.43.58,1.1.34,1.47-.28.43-1.01.21-3.16.23-.51,0-1.38,0-2.48.11-.89.08-1.16.16-2.6.34-1,.12-1.66.19-2.03.23-4.19.44-8.35,1.47-8.35,1.47-1.52.51-3.29.82-5.53,1.69-2.43.95-3.65,1.42-4.91,2.37-1.65,1.24-2.11,2.21-2.88,2.03-.98-.23-1.72-2.17-1.13-3.39Z"/>
+    <path fill="#e8dfc4" d="M36.25,153.07c.28-1.02,1.46-1.47,4.18-2.37,3.32-1.1,4.98-1.65,6.09-1.92,4.14-1.01,7.3-1.41,8.92-1.58,1.44-.15,3.87-.37,6.88.11.47.08,2.04.33,2.03.56-.01.32-2.87.22-7.56.9-1.86.27-3.2.54-3.84.68-.95.2-2.53.54-4.4,1.13-1.24.39-3.19,1.01-5.42,2.14-3.6,1.83-4.71,3.36-5.87,2.82-.82-.38-1.26-1.61-1.02-2.48Z"/>
+    <path fill="#273e47" d="M47.58,29.55c3.89-2.96,7.2-5.09,8.22-5.74,1.92-1.23,6.43-4.09,11.81-6.65,8.01-3.81,14.77-5.42,20.77-6.8,5.04-1.16,15.93-3.36,30.04-3.47,9.76-.08,17.2.87,22.12,1.51,4.59.6,10.95,1.46,19.13,3.63,4.29,1.14,10.44,2.79,17.86,6.12,5.5,2.46,13.17,5.97,21.45,13.07,3.03,2.6,10.76,9.64,17.26,21.08,2,3.51,4.85,8.61,6.87,16.01,1.03,3.78,2.68,11.22,2.09,20.7-.29,4.6-.71,10.61-3.74,17.68-1.29,3.03-4.37,9.67-11.36,15.11-4.27,3.32-8.28,4.84-9.79,5.36-1.91.66-6.76,2.3-13.08,2.04-5.59-.23-8.36-1.8-10.16,0-1.03,1.03-.97,2.34-1.05,5.59-.19,7.69-.28,11.53-1.34,14.35-1.38,3.66-4.09,5.59-7.92,8.31-6.05,4.3-11.93,5.51-16.21,6.35-3.82.75-10.08,1.55-18.01.6-1.76-.21-3.17-.46-4.5-.78-1.08-.26-4.08-.98-7.75-2.58-.06-.03-.11-.05-.12-.05-6.56-2.87-15.58-5.36-15.58-5.36-16.39-4.52-14.45-4.24-17.93-4.99-4.62-.99-9.32-1.99-15.69-2.49-3.52-.28-13.1-.99-22.64.91-5.6,1.11-8.59,2.04-8.59,2.04-1.75.58-2.45.89-3.91,1.34-.21.06-.51.15-.89.25,0,0-.92.23-1.92.38-3.33.52-5.94.22-6.95.08-3.15-.44-5.45-1.43-6.28-1.81-.99-.46-4.42-2.13-8.07-6.35-2.62-3.03-5.84-7.94-8.07-16.62-.62-2.4-3.35-13.61-.93-29.21,1.84-11.91,5.75-20.38,8.18-25.55,6.38-13.58,14.06-22.34,18.38-27.19,1.3-1.46,8.3-9.25,18.31-16.85Z"/>
+    <path fill="#e8dfc4" d="M73.5,190.03c-.39.94-.87,2.13-.45,3.5.57,1.85,2.34,2.61,2.6,2.71,1.34.55,2.58.29,3.16.11,1.3-.39,2.07-1.23,3.5-3.05,1.92-2.43,3.01-4.06,3.99-5.41,1.36-1.87,2.45-3.09,4.02-4.86,1.82-2.05,3.75-4.03,6.21-6.55,2.72-2.78,4.18-4.21,3.84-4.74-.2-.31-.76.03-2.82,0-1.65-.03-2.12-.26-2.82.11-.67.36-.73.83-1.35,1.69,0,0-1.29,1.79-3.39,2.71-1.16.51-2.21.53-4.29.56-2.65.05-3.06-.36-3.84.11-1.18.72-.69,1.95-1.81,4.4-.64,1.4-1.63,2.55-3.61,4.85-1.68,1.95-2.33,2.4-2.93,3.84Z"/>
+    <path fill="#335a70" d="M55.14,36.38c3.4-2.49,6.28-4.29,7.18-4.84,1.67-1.03,5.61-3.45,10.31-5.6,6.99-3.21,12.89-4.57,18.14-5.73,4.4-.98,13.91-2.83,26.22-2.93,8.52-.07,15.02.73,19.31,1.27,4.01.51,9.56,1.23,16.7,3.06,3.74.96,9.11,2.35,15.59,5.16,4.8,2.08,11.5,5.03,18.72,11.01,2.65,2.19,9.39,8.12,15.07,17.76,1.74,2.96,4.24,7.26,6,13.5.9,3.18,2.34,9.45,1.83,17.44-.25,3.88-.62,8.94-3.26,14.9-1.13,2.55-3.81,8.15-9.92,12.73-3.73,2.8-7.23,4.08-8.55,4.52-1.67.56-5.9,1.94-11.42,1.72-4.88-.2-7.3-1.52-8.87,0-.9.87-.84,1.98-.91,4.71-.16,6.48-.25,9.72-1.17,12.09-1.2,3.08-3.57,4.71-6.91,7-5.28,3.62-10.42,4.64-14.16,5.35-3.34.63-8.8,1.31-15.72.51-7.07-.82-7.66-2.26-24.4-7.38-8.98-2.75-13.29-3.71-15.66-4.2-4.04-.84-8.13-1.67-13.7-2.1-3.07-.24-11.43-.83-19.77.76-4.89.94-7.5,1.72-7.5,1.72-2.71.88-3.6,1.32-5.87,1.66-2.91.43-5.18.18-6.07.06-2.75-.37-4.76-1.21-5.48-1.53-.87-.38-3.86-1.79-7.05-5.35-2.28-2.55-5.1-6.69-7.05-14-.54-2.02-2.92-11.47-.82-24.62,1.61-10.04,5.02-17.18,7.14-21.53,5.57-11.45,12.27-18.82,16.05-22.92,1.13-1.23,7.25-7.8,15.98-14.2Z"/>
+    <path fill="#bd632f" d="M63.38,43.32c2.91-2.06,5.37-3.55,6.13-4,1.43-.85,4.79-2.85,8.81-4.63,5.98-2.65,11.02-3.77,15.5-4.74,3.76-.81,11.89-2.34,22.41-2.42,7.28-.06,12.83.6,16.5,1.05,3.43.42,8.17,1.01,14.27,2.53,3.2.79,7.79,1.95,13.32,4.26,4.1,1.72,9.82,4.16,16,9.1,2.26,1.81,8.03,6.71,12.88,14.68,1.49,2.44,3.62,6,5.13,11.16.77,2.63,2,7.82,1.56,14.42-.21,3.2-.53,7.39-2.79,12.31-.97,2.11-3.26,6.74-8.47,10.52-3.18,2.31-6.18,3.37-7.3,3.74-1.42.46-5.04,1.6-9.76,1.42-4.17-.16-6.24-1.25-7.58,0-.77.72-.72,1.63-.78,3.89-.14,5.35-.21,8.03-1,10-1.03,2.55-3.05,3.89-5.91,5.79-4.51,2.99-8.9,3.84-12.1,4.42-2.85.52-7.52,1.08-13.43.42-6.04-.68-6.55-1.87-20.85-6.1-7.67-2.27-11.36-3.07-13.38-3.47-3.45-.69-6.95-1.38-11.71-1.74-2.62-.19-9.77-.69-16.89.63-4.18.77-6.41,1.42-6.41,1.42-2.31.73-3.07,1.09-5.02,1.37-2.48.36-4.43.15-5.18.05-2.35-.31-4.07-1-4.68-1.26-.74-.32-3.3-1.48-6.02-4.42-1.95-2.11-4.36-5.53-6.02-11.58-.46-1.67-2.5-9.48-.7-20.35,1.37-8.3,4.29-14.2,6.1-17.8,4.76-9.46,10.49-15.56,13.71-18.94.97-1.01,6.19-6.44,13.66-11.73Z"/>
+    <path fill="#d8973c" d="M72.51,50.62c2.41-1.63,4.46-2.8,5.09-3.16,1.19-.67,3.98-2.25,7.31-3.66,4.96-2.1,9.14-2.98,12.86-3.74,3.12-.64,9.86-1.85,18.6-1.91,6.04-.04,10.65.48,13.69.83,2.84.33,6.78.8,11.84,2,2.65.63,6.46,1.54,11.06,3.37,3.4,1.36,8.15,3.28,13.28,7.19,1.88,1.43,6.66,5.31,10.69,11.6,1.24,1.93,3,4.74,4.26,8.82.64,2.08,1.66,6.18,1.3,11.4-.18,2.53-.44,5.84-2.31,9.73-.8,1.67-2.7,5.32-7.03,8.32-2.64,1.83-5.12,2.66-6.06,2.95-1.18.37-4.18,1.27-8.09,1.12-3.46-.13-5.18-.99-6.29,0-.64.57-.6,1.29-.65,3.08-.12,4.23-.17,6.35-.83,7.9-.85,2.01-2.53,3.08-4.9,4.57-3.74,2.37-7.39,3.03-10.04,3.49-2.37.41-6.24.86-11.15.33-5.01-.53-5.43-1.47-17.3-4.82-6.36-1.8-9.43-2.42-11.1-2.74-2.86-.55-5.77-1.09-9.71-1.37-2.18-.15-8.11-.54-14.02.5-3.47.61-5.32,1.12-5.32,1.12-1.92.58-2.55.86-4.16,1.08-2.06.28-3.68.12-4.3.04-1.95-.24-3.37-.79-3.89-1-.61-.25-2.74-1.17-5-3.49-1.62-1.67-3.62-4.37-5-9.15-.38-1.32-2.07-7.49-.58-16.08,1.14-6.56,3.56-11.22,5.07-14.07,3.95-7.48,8.7-12.3,11.38-14.97.8-.8,5.14-5.09,11.33-9.27Z"/>
+    <path fill="#6daa7a" d="M82.32,58.14c1.92-1.16,3.54-2,4.04-2.26.94-.48,3.16-1.61,5.81-2.61,3.94-1.5,7.27-2.13,10.22-2.67,2.48-.46,7.84-1.32,14.78-1.37,4.8-.03,8.46.34,10.88.59,2.26.24,5.39.57,9.41,1.43,2.11.45,5.14,1.1,8.79,2.41,2.71.97,6.48,2.35,10.55,5.14,1.49,1.02,5.29,3.79,8.49,8.29.98,1.38,2.39,3.39,3.38,6.3.51,1.49,1.32,4.41,1.03,8.14-.14,1.81-.35,4.17-1.84,6.95-.64,1.19-2.15,3.8-5.59,5.94-2.1,1.31-4.07,1.9-4.82,2.11-.94.26-3.33.9-6.43.8-2.75-.09-4.11-.71-5,0-.51.4-.48.92-.51,2.2-.09,3.02-.14,4.53-.66,5.64-.68,1.44-2.01,2.2-3.9,3.27-2.97,1.69-5.87,2.17-7.98,2.5-1.88.29-4.96.61-8.86.24-3.99-.38-4.32-1.05-13.75-3.45-5.06-1.28-7.49-1.73-8.82-1.96-2.28-.39-4.59-.78-7.72-.98-1.73-.11-6.44-.39-11.14.36-2.76.44-4.23.8-4.23.8-1.53.41-2.03.61-3.31.77-1.64.2-2.92.09-3.42.03-1.55-.17-2.68-.56-3.09-.71-.49-.18-2.18-.84-3.97-2.5-1.29-1.19-2.87-3.12-3.97-6.54-.3-.94-1.65-5.35-.46-11.49.91-4.68,2.83-8.02,4.03-10.05,3.14-5.34,6.92-8.78,9.05-10.69.64-.57,4.08-3.64,9.01-6.62Z"/>
+    <path fill="#9a8abf" d="M91.65,64.51c1.37-.83,2.52-1.43,2.88-1.61.67-.34,2.25-1.15,4.14-1.86,2.81-1.07,5.18-1.52,7.28-1.9,1.77-.32,5.59-.94,10.53-.97,3.42-.02,6.03.24,7.75.42,1.61.17,3.84.41,6.71,1.02,1.5.32,3.66.78,6.26,1.71,1.93.69,4.62,1.67,7.52,3.66,1.06.73,3.77,2.7,6.05,5.91.7.98,1.7,2.41,2.41,4.49.36,1.06.94,3.14.73,5.8-.1,1.29-.25,2.97-1.31,4.95-.45.85-1.53,2.71-3.98,4.23-1.5.93-2.9,1.36-3.43,1.5-.67.19-2.37.64-4.58.57-1.96-.06-2.93-.5-3.56,0-.36.29-.34.66-.37,1.57-.07,2.15-.1,3.23-.47,4.02-.48,1.03-1.43,1.57-2.78,2.33-2.12,1.2-4.18,1.54-5.68,1.78-1.34.21-3.54.44-6.31.17-2.84-.27-3.08-.75-9.8-2.46-3.6-.91-5.34-1.23-6.29-1.4-1.62-.28-3.27-.56-5.5-.7-1.23-.08-4.59-.28-7.94.25-1.96.31-3.01.57-3.01.57-1.09.29-1.44.44-2.36.55-1.17.14-2.08.06-2.44.02-1.11-.12-1.91-.4-2.2-.51-.35-.13-1.55-.6-2.83-1.78-.92-.85-2.05-2.23-2.83-4.66-.22-.67-1.17-3.81-.33-8.19.65-3.34,2.02-5.71,2.87-7.16,2.24-3.81,4.93-6.26,6.44-7.62.45-.41,2.91-2.59,6.42-4.72Z"/>
+    <path fill="#e8dfc4" d="M100.77,70.74c.83-.5,1.53-.86,1.74-.97.41-.21,1.36-.69,2.51-1.13,1.7-.65,3.13-.92,4.41-1.15,1.07-.2,3.38-.57,6.37-.59,2.07-.01,3.65.15,4.69.26.97.1,2.32.25,4.06.61.91.19,2.21.47,3.79,1.04,1.17.42,2.79,1.01,4.55,2.22.64.44,2.28,1.63,3.66,3.57.42.6,1.03,1.46,1.46,2.72.22.64.57,1.9.44,3.51-.06.78-.15,1.8-.79,3-.27.51-.93,1.64-2.41,2.56-.91.56-1.76.82-2.08.91-.4.11-1.43.39-2.77.35-1.19-.04-1.77-.31-2.16,0-.22.17-.21.4-.22.95-.04,1.3-.06,1.96-.29,2.43-.29.62-.87.95-1.68,1.41-1.28.73-2.53.93-3.44,1.08-.81.13-2.14.26-3.82.1-1.72-.16-1.86-.45-5.93-1.49-2.18-.55-3.23-.75-3.81-.85-.98-.17-1.98-.34-3.33-.42-.75-.05-2.78-.17-4.8.15-1.19.19-1.82.35-1.82.35-.66.18-.87.26-1.43.33-.71.09-1.26.04-1.47.01-.67-.08-1.16-.24-1.33-.31-.21-.08-.94-.36-1.71-1.08-.56-.51-1.24-1.35-1.71-2.82-.13-.41-.71-2.31-.2-4.95.39-2.02,1.22-3.46,1.74-4.33,1.35-2.3,2.98-3.79,3.9-4.61.27-.25,1.76-1.57,3.88-2.86Z"/>
+  </g>
+</svg>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progressBar" style="width:0%"></div>
+    </div>
+    <span class="progress-label" id="progressLabel">1 OF 6</span>
+  </div>
+  <!-- Question content injected here by renderQuestion() -->
+  <div class="quiz-body">
+    <span class="domain-badge" id="domainBadge"></span>
+    <p class="question-text" id="questionText"></p>
+    <p class="instruction">Tap <strong>most like me</strong>, then <strong>least like me</strong></p>
+    <div class="options-list" id="optionsList"></div>
+    <p class="tap-hint" id="tapHint">Select the option most like you</p>
+    <button class="btn-next" id="btnNext">Next →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     RESULT SCREEN
+     Populated by showResult() in JS
+════════════════════════════════════════════════ -->
+<div id="result" class="screen">
+  <div class="result-hero" id="resultHero">
+    <div class="result-logo">
+      <svg id="outerlayer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 251.71 236.21">
+  
+  <text font-size="42.59" font-family="BebasNeue-Regular,'Bebas Neue'" fill="#e8dfc4" transform="translate(100.02 227.15)"><tspan x="0" y="0">M</tspan><tspan letter-spacing="-.05em" x="22.91" y="0">A</tspan><tspan x="38.03" y="0">TERIAL</tspan></text>
+  <text font-size="42.59" font-family="BebasNeue-Regular,'Bebas Neue'" fill="#e8dfc4" transform="translate(0 227.69)"><tspan x="0" y="0">MIND</tspan></text>
+  <text font-size="29.28" font-family="BebasNeue-Regular,'Bebas Neue'" fill="#e8dfc4" transform="translate(68.97 227.53)"><tspan x="0" y="0">MY</tspan></text>
+  <g>
+    <path fill="#273e47" d="M32.52,151.32c-2.42,4.34,1.94,11.27,4.74,14.45,3.27,3.7,7.07,5.3,9.03,6.09,4.65,1.89,8.94,2.08,12.87,2.26,6.39.29,9.25.23,9.26.23,3.8-.08,6.21-.34,7.22,1.13.71,1.03.44,2.46.23,3.61-.29,1.56-.96,2.62-2.03,4.29-1.21,1.88-1.52,1.96-2.48,3.39-1.65,2.45-3.14,4.66-2.71,7.22.35,2.09,1.8,3.42,2.26,3.84,1.65,1.51,3.49,1.82,4.74,2.03,1.1.18,4.06.68,6.55-.9,1.57-1,2.3-2.41,2.71-3.16,2.36-4.37,5.15-7.64,10.38-13.77,3.29-3.86,5.84-6.04,7-7,2.63-2.17,4.69-3.41,5.42-3.84,2.41-1.41,3.5-1.66,4.97-2.48,3.69-2.07,7.61-5.94,7.67-7.9.11-2.99-8.47-7.65-50.11-14.67-10.14-.03-18.45.55-24.38,1.13-9.09.88-12,1.69-13.32,4.06Z"/>
+    <path fill="#e8dfc4" d="M104.99,168.02c.09.3,2.08.08,3.84-.45.78-.23,2.23-.74,3.84-1.81.57-.38,2.03-1.4,3.39-3.16.74-.96,1.42-1.85,1.13-2.37-.32-.58-1.75-.56-2.82-.11-1.27.53-1.36,1.36-3.27,3.39-.45.48-1.3,1.37-2.48,2.26-2.11,1.59-3.69,1.98-3.61,2.26Z"/>
+    <path fill="#e8dfc4" d="M106.23,156.4c3.75-.08,4.45.8,4.63,1.24.69,1.72-3.25,4.96-5.87,6.55-2.11,1.28-4.08,1.92-5.42,2.26"/>
+    <path fill="#e8dfc4" d="M92.46,151.66c.35-.42,1.48-.02,3.72.79,2.07.74,3.1,1.12,3.72,2.14.63,1.04.8,2.59.11,3.72-.17.28-.45.74-.9.9-2.26.81-7.64-6.38-6.66-7.56Z"/>
+    <path fill="#e8dfc4" d="M84.9,150.75c.42-.52,2.06-.14,3.16.68.9.67,1.12,1.4,1.92,2.71,0,0,.81,1.35,2.6,3.39,2.8,3.21,6.01,3.94,5.87,4.29-.16.4-4.61-.13-8.13-3.05-1.32-1.09-2.11-2.19-3.39-3.95-1.12-1.54-2.51-3.47-2.03-4.06Z"/>
+    <path fill="#e8dfc4" d="M79.59,162.27c.51-.1,1.42-.13,1.58.23.16.36-.48.99-2.82,2.93-1.98,1.64-2.98,2.47-3.5,2.82-1.29.88-3.29,2.23-5.87,2.93-3.9,1.06-7.96.3-8.01-.34-.03-.4,1.53-.51,5.42-1.92,2.93-1.06,5.59-2.02,8.01-3.61,1.14-.75,2.47-1.24,3.5-2.14.24-.21.82-.73,1.69-.9Z"/>
+    <path fill="#e8dfc4" d="M60.52,156.51c.87-.42,1.46-.29,3.39-.34,3.19-.08,3.99-.48,4.18-.11.43.83-3.38,3.58-5.76,5.3-3.41,2.46-5.84,3.75-7.9,4.64-.35.15-2.3.97-4.97,1.35-.99.14-2.36.34-2.48,0-.15-.42,1.81-1.21,4.74-3.16,3.61-2.4,5.41-3.6,6.66-5.42.56-.83,1.03-1.72,2.14-2.26Z"/>
+    <path fill="#e8dfc4" d="M76.54,150.08c.56-.85,3.07-.61,4.51.68.42.37.37.51,1.47,2.48.78,1.4,1.28,2.3,1.98,3.27.6.85.79.96,2.2,2.6,1.87,2.17,2.81,3.26,2.71,3.39-.41.55-7.08-2.97-11.4-8.92-1.91-2.62-1.6-3.3-1.47-3.5Z"/>
+    <path fill="#e8dfc4" d="M88.39,166.56c.4-.09.46.04,2.6.56,1.98.49,2.32.47,2.48.79.41.81-1.04,2.49-2.37,3.5-3.36,2.55-8.17,2.49-8.47,1.58-.17-.52,1.31-.8,3.05-3.05,1.45-1.87,1.54-3.11,2.71-3.39Z"/>
+    <path fill="#e8dfc4" d="M74.57,171.97c-.06-.34,1.13-.53,3.16-1.86.74-.48,1.75-1.15,2.82-2.26,1.27-1.32,2.03-2.2,2.03-2.2.68-.78.98-1.19,1.52-1.24.6-.05,1.29.34,1.47.9.13.41-.06.82-.51,1.52-.77,1.21-1.16,1.81-2.09,2.65-1.15,1.04-2.36,2.14-4.23,2.65-1.97.54-4.1.27-4.18-.17Z"/>
+    <path fill="#e8dfc4" d="M72.14,156.85c.92-.43,1.88-.19,2.14-.11.75.22,1.2.65,1.69,1.13.75.72,1.22,1.17,1.24,1.69.03.88-1.24,1.46-5.19,3.5-3.61,1.86-3.54,1.89-4.85,2.48-1.61.73-3.13,1.42-5.19,2.03-2.37.7-5.2,1.23-5.3.9-.08-.25,1.55-.77,4.29-2.26,2.64-1.43,4.75-2.58,6.77-4.63,1.75-1.78,2.63-2.67,2.93-3.16.35-.55.69-1.21,1.47-1.58Z"/>
+    <path fill="#e8dfc4" d="M43.59,164.86c.46.1,2.06.37,5.98-1.81,1.34-.74,2.4-1.51,4.51-3.05,2.44-1.78,2.53-2.03,2.48-2.14-.22-.5-3.49.44-5.42,1.13-2.53.9-1.83,1.03-6.66,3.27-1.39.65-2.54,1.14-2.48,1.69.06.56,1.33.85,1.58.9Z"/>
+    <path fill="#e8dfc4" d="M38.62,158.15c.27-.55.73-.78,2.26-1.47,2.05-.92,3.08-1.38,3.78-1.64,2.45-.89,3.68-1.34,5.14-1.75,2.74-.77,4.8-1.08,8.92-1.69,1.87-.28,3.29-.43,4.43-.53.99-.09,1.71-.13,1.89-.14,5.38-.32,6.09.4,6.32.68.35.43.58,1.1.34,1.47-.28.43-1.01.21-3.16.23-.51,0-1.38,0-2.48.11-.89.08-1.16.16-2.6.34-1,.12-1.66.19-2.03.23-4.19.44-8.35,1.47-8.35,1.47-1.52.51-3.29.82-5.53,1.69-2.43.95-3.65,1.42-4.91,2.37-1.65,1.24-2.11,2.21-2.88,2.03-.98-.23-1.72-2.17-1.13-3.39Z"/>
+    <path fill="#e8dfc4" d="M36.25,153.07c.28-1.02,1.46-1.47,4.18-2.37,3.32-1.1,4.98-1.65,6.09-1.92,4.14-1.01,7.3-1.41,8.92-1.58,1.44-.15,3.87-.37,6.88.11.47.08,2.04.33,2.03.56-.01.32-2.87.22-7.56.9-1.86.27-3.2.54-3.84.68-.95.2-2.53.54-4.4,1.13-1.24.39-3.19,1.01-5.42,2.14-3.6,1.83-4.71,3.36-5.87,2.82-.82-.38-1.26-1.61-1.02-2.48Z"/>
+    <path fill="#273e47" d="M47.58,29.55c3.89-2.96,7.2-5.09,8.22-5.74,1.92-1.23,6.43-4.09,11.81-6.65,8.01-3.81,14.77-5.42,20.77-6.8,5.04-1.16,15.93-3.36,30.04-3.47,9.76-.08,17.2.87,22.12,1.51,4.59.6,10.95,1.46,19.13,3.63,4.29,1.14,10.44,2.79,17.86,6.12,5.5,2.46,13.17,5.97,21.45,13.07,3.03,2.6,10.76,9.64,17.26,21.08,2,3.51,4.85,8.61,6.87,16.01,1.03,3.78,2.68,11.22,2.09,20.7-.29,4.6-.71,10.61-3.74,17.68-1.29,3.03-4.37,9.67-11.36,15.11-4.27,3.32-8.28,4.84-9.79,5.36-1.91.66-6.76,2.3-13.08,2.04-5.59-.23-8.36-1.8-10.16,0-1.03,1.03-.97,2.34-1.05,5.59-.19,7.69-.28,11.53-1.34,14.35-1.38,3.66-4.09,5.59-7.92,8.31-6.05,4.3-11.93,5.51-16.21,6.35-3.82.75-10.08,1.55-18.01.6-1.76-.21-3.17-.46-4.5-.78-1.08-.26-4.08-.98-7.75-2.58-.06-.03-.11-.05-.12-.05-6.56-2.87-15.58-5.36-15.58-5.36-16.39-4.52-14.45-4.24-17.93-4.99-4.62-.99-9.32-1.99-15.69-2.49-3.52-.28-13.1-.99-22.64.91-5.6,1.11-8.59,2.04-8.59,2.04-1.75.58-2.45.89-3.91,1.34-.21.06-.51.15-.89.25,0,0-.92.23-1.92.38-3.33.52-5.94.22-6.95.08-3.15-.44-5.45-1.43-6.28-1.81-.99-.46-4.42-2.13-8.07-6.35-2.62-3.03-5.84-7.94-8.07-16.62-.62-2.4-3.35-13.61-.93-29.21,1.84-11.91,5.75-20.38,8.18-25.55,6.38-13.58,14.06-22.34,18.38-27.19,1.3-1.46,8.3-9.25,18.31-16.85Z"/>
+    <path fill="#e8dfc4" d="M73.5,190.03c-.39.94-.87,2.13-.45,3.5.57,1.85,2.34,2.61,2.6,2.71,1.34.55,2.58.29,3.16.11,1.3-.39,2.07-1.23,3.5-3.05,1.92-2.43,3.01-4.06,3.99-5.41,1.36-1.87,2.45-3.09,4.02-4.86,1.82-2.05,3.75-4.03,6.21-6.55,2.72-2.78,4.18-4.21,3.84-4.74-.2-.31-.76.03-2.82,0-1.65-.03-2.12-.26-2.82.11-.67.36-.73.83-1.35,1.69,0,0-1.29,1.79-3.39,2.71-1.16.51-2.21.53-4.29.56-2.65.05-3.06-.36-3.84.11-1.18.72-.69,1.95-1.81,4.4-.64,1.4-1.63,2.55-3.61,4.85-1.68,1.95-2.33,2.4-2.93,3.84Z"/>
+    <path fill="#335a70" d="M55.14,36.38c3.4-2.49,6.28-4.29,7.18-4.84,1.67-1.03,5.61-3.45,10.31-5.6,6.99-3.21,12.89-4.57,18.14-5.73,4.4-.98,13.91-2.83,26.22-2.93,8.52-.07,15.02.73,19.31,1.27,4.01.51,9.56,1.23,16.7,3.06,3.74.96,9.11,2.35,15.59,5.16,4.8,2.08,11.5,5.03,18.72,11.01,2.65,2.19,9.39,8.12,15.07,17.76,1.74,2.96,4.24,7.26,6,13.5.9,3.18,2.34,9.45,1.83,17.44-.25,3.88-.62,8.94-3.26,14.9-1.13,2.55-3.81,8.15-9.92,12.73-3.73,2.8-7.23,4.08-8.55,4.52-1.67.56-5.9,1.94-11.42,1.72-4.88-.2-7.3-1.52-8.87,0-.9.87-.84,1.98-.91,4.71-.16,6.48-.25,9.72-1.17,12.09-1.2,3.08-3.57,4.71-6.91,7-5.28,3.62-10.42,4.64-14.16,5.35-3.34.63-8.8,1.31-15.72.51-7.07-.82-7.66-2.26-24.4-7.38-8.98-2.75-13.29-3.71-15.66-4.2-4.04-.84-8.13-1.67-13.7-2.1-3.07-.24-11.43-.83-19.77.76-4.89.94-7.5,1.72-7.5,1.72-2.71.88-3.6,1.32-5.87,1.66-2.91.43-5.18.18-6.07.06-2.75-.37-4.76-1.21-5.48-1.53-.87-.38-3.86-1.79-7.05-5.35-2.28-2.55-5.1-6.69-7.05-14-.54-2.02-2.92-11.47-.82-24.62,1.61-10.04,5.02-17.18,7.14-21.53,5.57-11.45,12.27-18.82,16.05-22.92,1.13-1.23,7.25-7.8,15.98-14.2Z"/>
+    <path fill="#bd632f" d="M63.38,43.32c2.91-2.06,5.37-3.55,6.13-4,1.43-.85,4.79-2.85,8.81-4.63,5.98-2.65,11.02-3.77,15.5-4.74,3.76-.81,11.89-2.34,22.41-2.42,7.28-.06,12.83.6,16.5,1.05,3.43.42,8.17,1.01,14.27,2.53,3.2.79,7.79,1.95,13.32,4.26,4.1,1.72,9.82,4.16,16,9.1,2.26,1.81,8.03,6.71,12.88,14.68,1.49,2.44,3.62,6,5.13,11.16.77,2.63,2,7.82,1.56,14.42-.21,3.2-.53,7.39-2.79,12.31-.97,2.11-3.26,6.74-8.47,10.52-3.18,2.31-6.18,3.37-7.3,3.74-1.42.46-5.04,1.6-9.76,1.42-4.17-.16-6.24-1.25-7.58,0-.77.72-.72,1.63-.78,3.89-.14,5.35-.21,8.03-1,10-1.03,2.55-3.05,3.89-5.91,5.79-4.51,2.99-8.9,3.84-12.1,4.42-2.85.52-7.52,1.08-13.43.42-6.04-.68-6.55-1.87-20.85-6.1-7.67-2.27-11.36-3.07-13.38-3.47-3.45-.69-6.95-1.38-11.71-1.74-2.62-.19-9.77-.69-16.89.63-4.18.77-6.41,1.42-6.41,1.42-2.31.73-3.07,1.09-5.02,1.37-2.48.36-4.43.15-5.18.05-2.35-.31-4.07-1-4.68-1.26-.74-.32-3.3-1.48-6.02-4.42-1.95-2.11-4.36-5.53-6.02-11.58-.46-1.67-2.5-9.48-.7-20.35,1.37-8.3,4.29-14.2,6.1-17.8,4.76-9.46,10.49-15.56,13.71-18.94.97-1.01,6.19-6.44,13.66-11.73Z"/>
+    <path fill="#d8973c" d="M72.51,50.62c2.41-1.63,4.46-2.8,5.09-3.16,1.19-.67,3.98-2.25,7.31-3.66,4.96-2.1,9.14-2.98,12.86-3.74,3.12-.64,9.86-1.85,18.6-1.91,6.04-.04,10.65.48,13.69.83,2.84.33,6.78.8,11.84,2,2.65.63,6.46,1.54,11.06,3.37,3.4,1.36,8.15,3.28,13.28,7.19,1.88,1.43,6.66,5.31,10.69,11.6,1.24,1.93,3,4.74,4.26,8.82.64,2.08,1.66,6.18,1.3,11.4-.18,2.53-.44,5.84-2.31,9.73-.8,1.67-2.7,5.32-7.03,8.32-2.64,1.83-5.12,2.66-6.06,2.95-1.18.37-4.18,1.27-8.09,1.12-3.46-.13-5.18-.99-6.29,0-.64.57-.6,1.29-.65,3.08-.12,4.23-.17,6.35-.83,7.9-.85,2.01-2.53,3.08-4.9,4.57-3.74,2.37-7.39,3.03-10.04,3.49-2.37.41-6.24.86-11.15.33-5.01-.53-5.43-1.47-17.3-4.82-6.36-1.8-9.43-2.42-11.1-2.74-2.86-.55-5.77-1.09-9.71-1.37-2.18-.15-8.11-.54-14.02.5-3.47.61-5.32,1.12-5.32,1.12-1.92.58-2.55.86-4.16,1.08-2.06.28-3.68.12-4.3.04-1.95-.24-3.37-.79-3.89-1-.61-.25-2.74-1.17-5-3.49-1.62-1.67-3.62-4.37-5-9.15-.38-1.32-2.07-7.49-.58-16.08,1.14-6.56,3.56-11.22,5.07-14.07,3.95-7.48,8.7-12.3,11.38-14.97.8-.8,5.14-5.09,11.33-9.27Z"/>
+    <path fill="#6daa7a" d="M82.32,58.14c1.92-1.16,3.54-2,4.04-2.26.94-.48,3.16-1.61,5.81-2.61,3.94-1.5,7.27-2.13,10.22-2.67,2.48-.46,7.84-1.32,14.78-1.37,4.8-.03,8.46.34,10.88.59,2.26.24,5.39.57,9.41,1.43,2.11.45,5.14,1.1,8.79,2.41,2.71.97,6.48,2.35,10.55,5.14,1.49,1.02,5.29,3.79,8.49,8.29.98,1.38,2.39,3.39,3.38,6.3.51,1.49,1.32,4.41,1.03,8.14-.14,1.81-.35,4.17-1.84,6.95-.64,1.19-2.15,3.8-5.59,5.94-2.1,1.31-4.07,1.9-4.82,2.11-.94.26-3.33.9-6.43.8-2.75-.09-4.11-.71-5,0-.51.4-.48.92-.51,2.2-.09,3.02-.14,4.53-.66,5.64-.68,1.44-2.01,2.2-3.9,3.27-2.97,1.69-5.87,2.17-7.98,2.5-1.88.29-4.96.61-8.86.24-3.99-.38-4.32-1.05-13.75-3.45-5.06-1.28-7.49-1.73-8.82-1.96-2.28-.39-4.59-.78-7.72-.98-1.73-.11-6.44-.39-11.14.36-2.76.44-4.23.8-4.23.8-1.53.41-2.03.61-3.31.77-1.64.2-2.92.09-3.42.03-1.55-.17-2.68-.56-3.09-.71-.49-.18-2.18-.84-3.97-2.5-1.29-1.19-2.87-3.12-3.97-6.54-.3-.94-1.65-5.35-.46-11.49.91-4.68,2.83-8.02,4.03-10.05,3.14-5.34,6.92-8.78,9.05-10.69.64-.57,4.08-3.64,9.01-6.62Z"/>
+    <path fill="#9a8abf" d="M91.65,64.51c1.37-.83,2.52-1.43,2.88-1.61.67-.34,2.25-1.15,4.14-1.86,2.81-1.07,5.18-1.52,7.28-1.9,1.77-.32,5.59-.94,10.53-.97,3.42-.02,6.03.24,7.75.42,1.61.17,3.84.41,6.71,1.02,1.5.32,3.66.78,6.26,1.71,1.93.69,4.62,1.67,7.52,3.66,1.06.73,3.77,2.7,6.05,5.91.7.98,1.7,2.41,2.41,4.49.36,1.06.94,3.14.73,5.8-.1,1.29-.25,2.97-1.31,4.95-.45.85-1.53,2.71-3.98,4.23-1.5.93-2.9,1.36-3.43,1.5-.67.19-2.37.64-4.58.57-1.96-.06-2.93-.5-3.56,0-.36.29-.34.66-.37,1.57-.07,2.15-.1,3.23-.47,4.02-.48,1.03-1.43,1.57-2.78,2.33-2.12,1.2-4.18,1.54-5.68,1.78-1.34.21-3.54.44-6.31.17-2.84-.27-3.08-.75-9.8-2.46-3.6-.91-5.34-1.23-6.29-1.4-1.62-.28-3.27-.56-5.5-.7-1.23-.08-4.59-.28-7.94.25-1.96.31-3.01.57-3.01.57-1.09.29-1.44.44-2.36.55-1.17.14-2.08.06-2.44.02-1.11-.12-1.91-.4-2.2-.51-.35-.13-1.55-.6-2.83-1.78-.92-.85-2.05-2.23-2.83-4.66-.22-.67-1.17-3.81-.33-8.19.65-3.34,2.02-5.71,2.87-7.16,2.24-3.81,4.93-6.26,6.44-7.62.45-.41,2.91-2.59,6.42-4.72Z"/>
+    <path fill="#e8dfc4" d="M100.77,70.74c.83-.5,1.53-.86,1.74-.97.41-.21,1.36-.69,2.51-1.13,1.7-.65,3.13-.92,4.41-1.15,1.07-.2,3.38-.57,6.37-.59,2.07-.01,3.65.15,4.69.26.97.1,2.32.25,4.06.61.91.19,2.21.47,3.79,1.04,1.17.42,2.79,1.01,4.55,2.22.64.44,2.28,1.63,3.66,3.57.42.6,1.03,1.46,1.46,2.72.22.64.57,1.9.44,3.51-.06.78-.15,1.8-.79,3-.27.51-.93,1.64-2.41,2.56-.91.56-1.76.82-2.08.91-.4.11-1.43.39-2.77.35-1.19-.04-1.77-.31-2.16,0-.22.17-.21.4-.22.95-.04,1.3-.06,1.96-.29,2.43-.29.62-.87.95-1.68,1.41-1.28.73-2.53.93-3.44,1.08-.81.13-2.14.26-3.82.1-1.72-.16-1.86-.45-5.93-1.49-2.18-.55-3.23-.75-3.81-.85-.98-.17-1.98-.34-3.33-.42-.75-.05-2.78-.17-4.8.15-1.19.19-1.82.35-1.82.35-.66.18-.87.26-1.43.33-.71.09-1.26.04-1.47.01-.67-.08-1.16-.24-1.33-.31-.21-.08-.94-.36-1.71-1.08-.56-.51-1.24-1.35-1.71-2.82-.13-.41-.71-2.31-.2-4.95.39-2.02,1.22-3.46,1.74-4.33,1.35-2.3,2.98-3.79,3.9-4.61.27-.25,1.76-1.57,3.88-2.86Z"/>
+  </g>
+</svg>
+    </div>
+    <p class="result-eyebrow">Your mental material is</p>
+    <div class="result-symbol" id="resultSymbol"></div>
+    <h2 class="result-name" id="resultName"></h2>
+    <p class="result-tagline" id="resultTagline"></p>
+  </div>
+  <div class="hero-rule"></div>
+  <div class="result-body">
+    <div class="result-section"><h3>Your material profile</h3><p id="resultProfile"></p></div>
+    <div class="result-section"><h3>In relationships &amp; work</h3><p id="resultRelationships"></p></div>
+    <div class="result-section">
+      <h3>Your material breakdown</h3>
+      <!-- NOTE: All 7 materials always shown, percentages always sum to 100% -->
+      <div class="mat-breakdown" id="matBreakdown"></div>
+    </div>
+    <div class="result-section">
+      <h3>Material profile by domain</h3>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+        How your mental material performs across each life domain, grounded in its engineering properties.
+      </p>
+      <div class="domain-profile" id="domainBars"></div>
+    </div>
+    <div class="share-row">
+      <button class="btn-share primary" id="copyBtn">Copy result to share</button>
+      <button class="btn-share" onclick="window.open('https://www.youtube.com/@iSightLabs','_blank')">YouTube Channel ↗</button>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════
+         PATREON / PAYMENT SECTION
+         ────────────────────────────────────────────────
+         TO ACTIVATE PATREON:
+           1. Create your Patreon page at patreon.com
+           2. Replace YOUR_PATREON_USERNAME below with your username
+           3. Remove the "display:none" style from the section div
+           4. Update the tier names and descriptions to match your tiers
+
+         TO ACTIVATE A PAYMENT BUTTON (e.g. Stripe, PayPal, Gumroad):
+           1. Get your payment link from your payment provider
+           2. Replace YOUR_PAYMENT_LINK below with the actual URL
+           3. Remove the "display:none" style from the section div
+           4. Update button text and price as needed
+    ════════════════════════════════════════════════ -->
+    <div class="result-section" id="supportSection">
+      <!-- PLACEHOLDER BANNER — remove this div when Patreon is live -->
+      <div style="background:rgba(216,151,60,0.12);border:1px dashed rgba(216,151,60,0.4);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--amber);line-height:1.6;">
+        <strong>PLACEHOLDER</strong> — Replace <code>YOUR_PATREON_USERNAME</code> and <code>YOUR_PAYMENT_LINK</code> with real URLs. Remove this banner when live.
+      </div>
+      <h3>Support the work</h3>
+      <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:20px;">
+        Mind My Material is free to take. If it was useful, consider supporting future development —
+        deeper profiles, theWORKableME integration, and the full Hindsight 80/20 platform.
+      </p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+
+        <!-- PATREON BUTTON — replace YOUR_PATREON_USERNAME and remove display:none above to activate -->
+        <a href="https://www.patreon.com/YOUR_PATREON_USERNAME"
+           target="_blank"
+           style="flex:1;min-width:160px;display:flex;align-items:center;justify-content:center;gap:10px;
+                  padding:14px 20px;border-radius:10px;text-decoration:none;
+                  background:#FF424D;color:#fff;font-family:'Bebas Neue',sans-serif;
+                  font-size:16px;letter-spacing:0.1em;transition:opacity 0.2s;"
+           onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+            <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524zM.003 23.537h4.052V.524H.003z"/>
+          </svg>
+          Support on Patreon
+        </a>
+
+        <!-- PAYMENT / UNLOCK BUTTON — replace YOUR_PAYMENT_LINK and price, activate by removing display:none above -->
+        <a href="YOUR_PAYMENT_LINK"
+           target="_blank"
+           style="flex:1;min-width:160px;display:flex;align-items:center;justify-content:center;gap:8px;
+                  padding:14px 20px;border-radius:10px;text-decoration:none;
+                  background:var(--amber);color:var(--navy);font-family:'Bebas Neue',sans-serif;
+                  font-size:16px;letter-spacing:0.1em;transition:opacity 0.2s;"
+           onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          ★ Unlock Full Profile — $X
+        </a>
+
+      </div>
+    </div>
+
+        <!-- ── DEEP DIVE LINKS ──
+         Populated by buildDeepDiveLinks() after result is computed.
+         Links open All About and Compare pages in a new tab.
+         TO CHANGE FILE NAMES: update filenames in buildDeepDiveLinks() in JS. -->
+    <div id="deepDiveLinks" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;"></div>
+
+    <button class="btn-retake" id="retakeBtn">Retake the assessment</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     JAVASCRIPT — ALL LOGIC BELOW
+     Sections:
+       1. SCORING CONSTANTS
+       2. QUESTION BANK  ← add/edit questions here
+       3. MATERIAL PROFILES  ← edit descriptions here
+       4. STATE VARIABLES
+       5. HELPER FUNCTIONS
+       6. QUIZ LOGIC
+       7. RESULT DISPLAY
+       8. EVENT LISTENERS
+════════════════════════════════════════════════ -->
+<script>
+
+/* ══════════════════════════════════════════════════
+   1. SCORING CONSTANTS
+   ──────────────────────────────────────────────────
+   SCORING SYSTEM: All 7 options shown every question.
+   Most = SCORE_MOST, Least = SCORE_LEAST, Others = SCORE_MID.
+   
+   Per question total = SCORE_MOST + 5×SCORE_MID + SCORE_LEAST
+                      = 6 + 15 + 1 = 22
+   
+   After QUESTIONS_PER_SESSION questions:
+   Total points = 22 × 6 = 132
+   
+   Each material's % = (score / 132) × 100
+   → Always sums to exactly 100%
+   
+   TO CHANGE SCORE WEIGHTS: edit the three values below.
+   The math still works as long as you also update TOTAL_POINTS.
+══════════════════════════════════════════════════ */
+const QUESTIONS_PER_SESSION = 6;   // Number of questions shown per session
+const SCORE_MOST  = 6;             // Points for "most like me" selection
+const SCORE_MID   = 3;             // Points for unselected options
+const SCORE_LEAST = 1;             // Points for "least like me" selection
+
+// Total points per session — must equal (SCORE_MOST + 5×SCORE_MID + SCORE_LEAST) × QUESTIONS_PER_SESSION
+// If you change any score values above, recalculate this:
+// (6 + 5×3 + 1) × 6 = 22 × 6 = 132
+const TOTAL_POINTS = (SCORE_MOST + 5 * SCORE_MID + SCORE_LEAST) * QUESTIONS_PER_SESSION;
+
+/* ══════════════════════════════════════════════════
+   2. QUESTION BANK
+   ──────────────────────────────────────────────────
+   Structure: array of question objects.
+   Each question has:
+     domain:  string — one of the 6 domains
+     text:    string — the scenario prompt shown to user
+     options: array of 7 objects, each with:
+       mat:  string — material key (must match MATERIALS keys)
+       text: string — the answer option text
+   
+   DOMAINS: 'Social' | 'Beliefs' | 'Health' | 'Financial' | 'Learning' | 'Time'
+   MATERIALS: 'metal' | 'ceramic' | 'polymer' | 'elastomer' | 'composite' | 'foam' | 'natural'
+   
+   Each question MUST have exactly 7 options, one per material.
+   One question is randomly selected per domain each session.
+   
+   TO ADD A QUESTION: copy an existing block, change domain/text/options.
+   TO REMOVE A QUESTION: delete its object. Keep at least 1 per domain.
+══════════════════════════════════════════════════ */
+const QUESTION_BANK = [
+
+  /* ── Social / Relationship ── */
+  { domain: 'Social',
+    text: "The worst thing my closest friend could do — yet I would still forgive them — would be…",
+    options: [
+      { mat: 'ceramic',   text: "Lying to me about something significant." },
+      { mat: 'metal',     text: "Betraying a deep secret I trusted them with." },
+      { mat: 'composite', text: "Breaking a promise that was very important to me." },
+      { mat: 'natural',   text: "Being inconsiderate of my feelings in a moment of need." },
+      { mat: 'polymer',   text: "Taking credit for my work or ideas." },
+      { mat: 'foam',      text: "Overlooking my contributions repeatedly, diminishing my role in our friendship." },
+      { mat: 'elastomer', text: "Forgetting an important date, like my birthday or an anniversary." },
+    ]
+  },
+  { domain: 'Social',
+    text: "Intimacy to me is like…",
+    options: [
+      { mat: 'composite', text: "A symphony orchestra — meticulously conducted for perfect harmony." },
+      { mat: 'metal',     text: "A heavy metal concert — intense and unyielding with raw power." },
+      { mat: 'ceramic',   text: "A classical piano recital — elegant and precise but fragile if mishandled." },
+      { mat: 'polymer',   text: "A jazz improvisation — adaptable and flowing with the mood." },
+      { mat: 'natural',   text: "A folk gathering around a campfire — warm and natural with spontaneous connection." },
+      { mat: 'elastomer', text: "A rubber band jam session — bouncy and flexible, stretching to fit the rhythm." },
+      { mat: 'foam',      text: "A bubble bath party — soft and cushioning but easily popped under pressure." },
+    ]
+  },
+
+  /* ── Psychological / Beliefs ── */
+  { domain: 'Beliefs',
+    text: "In matters that can't be proven, I tend to…",
+    options: [
+      { mat: 'ceramic',   text: "Stick with what I know, even if strong evidence shows I may be wrong." },
+      { mat: 'metal',     text: "Ignore anyone who disagrees with me, refusing to see their side." },
+      { mat: 'composite', text: "Think about other views, but quickly return to my original beliefs without deep consideration." },
+      { mat: 'natural',   text: "Avoid situations that might challenge my beliefs, staying in my comfort zone." },
+      { mat: 'polymer',   text: "Listen to others and consider them, but mostly keep my own beliefs unchanged." },
+      { mat: 'elastomer', text: "Quickly become defensive when challenged, shutting down the conversation." },
+      { mat: 'foam',      text: "Embrace diverse views fully, willing to evolve my beliefs based on compelling insights." },
+    ]
+  },
+
+  /* ── Physical / Health ── */
+  { domain: 'Health',
+    text: "My body's health is…",
+    options: [
+      { mat: 'ceramic',   text: "Moderately important — I try to eat well and stay active without being too strict." },
+      { mat: 'metal',     text: "A top priority — I strictly adhere to rigorous exercise and a meticulous diet." },
+      { mat: 'composite', text: "Important — I keep a balanced approach to diet and consistent exercise." },
+      { mat: 'natural',   text: "Relaxed — I don't prioritize diet or exercise rigorously but keep generally healthy habits." },
+      { mat: 'polymer',   text: "Flexible — not overly strict with my diet or exercise routine, but mindful of health." },
+      { mat: 'elastomer', text: "Casual — I rarely focus on diet or formal exercise and go with the flow of life." },
+      { mat: 'foam',      text: "Indifferent — I treat health as secondary to comfort and ease, with minimal effort." },
+    ]
+  },
+
+  /* ── Financial ── */
+  { domain: 'Financial',
+    text: "Money is…",
+    options: [
+      { mat: 'ceramic',   text: "A tool for stability — it needs careful budgeting." },
+      { mat: 'metal',     text: "A resource for future security, managed meticulously." },
+      { mat: 'composite', text: "Important for comfort, with balanced spending." },
+      { mat: 'natural',   text: "A means for enjoyment and spontaneous pleasures." },
+      { mat: 'polymer',   text: "Flexible — for necessities and fun, without strict budgeting." },
+      { mat: 'elastomer', text: "Fuel for fun, spent freely for maximum enjoyment." },
+      { mat: 'foam',      text: "A cushion for uncertainties, saved softly for peaceful relaxation." },
+    ]
+  },
+
+  /* ── Intellectual / Learning ── */
+  { domain: 'Learning',
+    text: "You're a naval commander. Half your fleet is destroyed. Undetectable submarines will strike again. Your next move is to…",
+    options: [
+      { mat: 'ceramic',   text: "Pause all operations — analyze every data point before planning the next move." },
+      { mat: 'metal',     text: "Continue the mission, relying on our strength." },
+      { mat: 'composite', text: "Collaborate with allied forces for joint reconnaissance and intelligence-sharing." },
+      { mat: 'natural',   text: "Temporarily retreat for a strategic reassessment." },
+      { mat: 'polymer',   text: "Request additional radar and sonar support to enhance detection without slowing down." },
+      { mat: 'elastomer', text: "Increase surface patrols to deter or detect the enemy." },
+      { mat: 'foam',      text: "Stay vigilant but conserve resources, floating defensively while awaiting reinforcements." },
+    ]
+  },
+  { domain: 'Learning',
+    text: "My dream vacation or activity is like…",
+    options: [
+      { mat: 'composite', text: "A multi-destination tour — intricately planned for diverse experiences." },
+      { mat: 'metal',     text: "A mountain climb — tough and enduring with unwavering resolve." },
+      { mat: 'ceramic',   text: "A spa retreat — refined and serene but structured to perfection." },
+      { mat: 'polymer',   text: "A beach hop — adaptable to weather and whims." },
+      { mat: 'natural',   text: "A forest hike — warm and natural with spontaneous trails." },
+      { mat: 'elastomer', text: "A bungee jump — bouncy and flexible with thrilling rebounds." },
+      { mat: 'foam',      text: "A float down a lazy river — soft and cushioning, drifting gently." },
+    ]
+  },
+
+  /* ── Time / Space ── */
+  { domain: 'Time',
+    text: "Fixed time commitments to me are like…",
+    options: [
+      { mat: 'ceramic',   text: "Greyhounds: aware of the race but ultimately laid back once it's over." },
+      { mat: 'metal',     text: "German Shepherds: demanding strict obedience and precision." },
+      { mat: 'composite', text: "Border Collies: requiring attentive coordination and timely responses." },
+      { mat: 'natural',   text: "Basset Hounds: taking their time and not rushing for anyone." },
+      { mat: 'polymer',   text: "Labrador Retrievers: flexible but appreciating a structured schedule." },
+      { mat: 'elastomer', text: "Beagles: aware of the clock but easily distracted by more interesting scents." },
+      { mat: 'foam',      text: "Pugs: indifferent to the timetable, content to nap through it all." },
+    ]
+  },
+  { domain: 'Time',
+    text: "My ideal meal is like…",
+    options: [
+      { mat: 'composite', text: "A gourmet fusion dish — precisely layered for complex flavors." },
+      { mat: 'metal',     text: "A hearty steak — tough and satisfying with enduring taste." },
+      { mat: 'ceramic',   text: "A delicate soufflé — refined but prone to collapse if mishandled." },
+      { mat: 'polymer',   text: "A versatile stir-fry — adaptable to whatever ingredients are on hand." },
+      { mat: 'natural',   text: "A farm-fresh salad — earthy and nurturing with natural simplicity." },
+      { mat: 'elastomer', text: "A stretchy pizza — flexible and fun to pull apart." },
+      { mat: 'foam',      text: "A light mousse — airy and gentle but dissolving quickly." },
+    ]
+  },
+
+]; // ← end of QUESTION_BANK
+
+/* ══════════════════════════════════════════════════
+   3. MATERIAL PROFILES
+   ──────────────────────────────────────────────────
+   Each material has:
+     name:          display name
+     symbol:        chemical/material notation shown on result screen
+     color:         hex color (used for result screen glow and bars)
+     tagline:       3-word summary shown under the result name
+     profile:       2-3 sentence personality description
+     relationships: 2-3 sentences about work and relationship behavior
+   
+   TO MODIFY: edit the text values below.
+   The 'color' here should match the CSS variable for consistency.
+══════════════════════════════════════════════════ */
+const MATERIALS = {
+  metal: {
+    name: 'Metal', symbol: 'Fe', color: '#8fa8bc',
+    tagline: 'Resilient. Dependable. Built to last.',
+    profile: 'You are strong-willed and resolute — someone others rely on when things get hard. Like steel under load, you hold your shape under pressure. You have high standards, you keep your word, and you expect the same from others. Your loyalty runs deep, but so does your sense of what is and is not acceptable.',
+    relationships: 'In relationships you are protective and steadfast. At work you are the person who delivers — no excuses. You can come across as inflexible — your rigidity is both your greatest strength and your core challenge. You lead by example, not by committee.',
+  },
+  ceramic: {
+    name: 'Ceramic', symbol: 'Si₃N₄', color: '#c4b59a',
+    tagline: 'Refined. Precise. Holds form under fire.',
+    profile: 'You bring elegance and precision to everything you do. Like porcelain, you are crafted carefully, resist heat remarkably, and hold a standard that most people never reach. You are perfectionistic, selective in relationships, and deeply principled. Your brittleness is real — you can fracture under sudden impact — but you rarely bend.',
+    relationships: 'You form few but deep connections. At work you are the architect, the analyst, the one who gets it right the first time. You find chaos draining. You are at your best when expectations are clear and quality is the measure.',
+  },
+  polymer: {
+    name: 'Polymer', symbol: 'C₂H₄', color: '#6daa7a',
+    tagline: 'Adaptable. Practical. Made for real life.',
+    profile: 'You are versatile and easy to work with — practically minded, socially fluid, and surprisingly durable under strain. Like a good polymer, you flex without snapping and return to form without drama. You are not the most rigid person in the room, and you are fine with that.',
+    relationships: 'You make friends easily across very different circles. At work you are the integrator — you can read a room, shift approach mid-conversation, and find what works without being precious about method. Your challenge is depth: sometimes flexibility becomes avoidance.',
+  },
+  elastomer: {
+    name: 'Elastomer', symbol: 'C₄H₆', color: '#c4835a',
+    tagline: 'Resilient. Bouncy. Always returns to form.',
+    profile: 'You absorb the hard hits and spring back. Life has stretched you — but you always return to yourself. You are playful, accommodating, and hard to permanently wound. You live in the present and resist rigidity in yourself and in others.',
+    relationships: 'You are the person who keeps things light without being shallow. At work you thrive in dynamic environments and struggle with bureaucracy. Your bounce-back is genuine, not performance. Watch for over-accommodating — elastomers can over-stretch.',
+  },
+  composite: {
+    name: 'Composite', symbol: 'CFRP', color: '#9a8abf',
+    tagline: 'Complex. Balanced. Greater than the sum of parts.',
+    profile: 'You are multifaceted in a way that defies simple categories. Like carbon fiber reinforced polymer, your strength comes from the combination — different elements working in concert to produce properties none could achieve alone. You are strategic, collaborative, and difficult to fully read on first meeting.',
+    relationships: 'You build systems, teams, and frameworks. In relationships you bring different strengths to different people. At work you see across silos. Your challenge is that composites can be brittle along certain axes — know your failure modes and protect them.',
+  },
+  foam: {
+    name: 'Foam', symbol: 'PU', color: '#7ab8cc',
+    tagline: 'Gentle. Absorbing. The quiet support.',
+    profile: 'You cushion the world around you. Others feel safer and less burdened near you. You absorb impact without complaint and rarely ask for recognition. Like memory foam, you take the shape of your environment — sometimes to a fault. Your lightness is a feature, not a weakness.',
+    relationships: 'You are the listener, the supporter, the one who shows up quietly. At work you are underestimated until suddenly essential. Your challenge is compression fatigue — absorbing too much for too long degrades your structure. Learn to decompress.',
+  },
+  natural: {
+    name: 'Natural', symbol: 'Org', color: '#8aaa5a',
+    tagline: 'Grounded. Warm. Growing toward the light.',
+    profile: 'You are rooted in the organic — in real places, real relationships, and experience over abstraction. Like wood or stone, you carry the marks of your history and are stronger for them. You are warm, authentic, and growth-oriented. You connect easily with people and place.',
+    relationships: 'You build community naturally. In relationships you lead with warmth and presence. At work you thrive in mission-driven environments where the human element matters. Natural materials are vulnerable to certain conditions — protect yourself from environments that extract without replenishing.',
+  },
+}; // ← end of MATERIALS
+
+/* ══════════════════════════════════════════════════
+   4. STATE VARIABLES — do not edit these
+══════════════════════════════════════════════════ */
+const DOMAIN_ORDER = ['Social','Beliefs','Health','Financial','Learning','Time'];
+let sessionQuestions = []; // Built fresh each session by buildSession()
+let currentQ     = 0;
+let scores       = {};     // Accumulated scores per material
+let domainScores = {};     // Tracks which material led each domain
+let selections   = { most: null, least: null }; // Current question selections
+
+/* ══════════════════════════════════════════════════
+   5. HELPER FUNCTIONS
+══════════════════════════════════════════════════ */
+
+// Fisher-Yates shuffle — randomizes array order
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Returns random element from array
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Shows one screen, hides all others
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+/* ══════════════════════════════════════════════════
+   6. QUIZ LOGIC
+══════════════════════════════════════════════════ */
+
+// Builds a fresh session: one random question per domain,
+// options shuffled (all 7 shown in random order)
+function buildSession() {
+  scores = Object.fromEntries(Object.keys(MATERIALS).map(k => [k, 0]));
+  domainScores = {};
+  currentQ = 0;
+  selections = { most: null, least: null };
+
+  sessionQuestions = DOMAIN_ORDER.map(domain => {
+    const pool   = QUESTION_BANK.filter(q => q.domain === domain);
+    const chosen = pickRandom(pool);
+    // Shuffle all 7 options so order is random each session
+    return { domain: chosen.domain, text: chosen.text, options: shuffle(chosen.options) };
+  });
+}
+
+// Renders the current question to the quiz screen
+function renderQuestion() {
+  const q = sessionQuestions[currentQ];
+  selections = { most: null, least: null };
+
+  // Update progress bar and label
+  document.getElementById('progressBar').style.width = (currentQ / QUESTIONS_PER_SESSION * 100) + '%';
+  document.getElementById('progressLabel').textContent = (currentQ + 1) + ' OF ' + QUESTIONS_PER_SESSION;
+  document.getElementById('domainBadge').textContent = q.domain;
+  document.getElementById('questionText').textContent = q.text;
+
+  const hint = document.getElementById('tapHint');
+  hint.textContent = 'Select the option most like you';
+  hint.className = 'tap-hint';
+  document.getElementById('btnNext').className = 'btn-next';
+
+  // Build option cards — all 7 shown as a vertical list
+  const list = document.getElementById('optionsList');
+  list.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const card = document.createElement('div');
+    card.className = 'option-card';
+    card.innerHTML = '<span class="option-text">' + opt.text + '</span><span class="option-tag"></span>';
+    card.addEventListener('click', () => selectOption(i));
+    list.appendChild(card);
+  });
+}
+
+// Handles option tap: first tap = Most, second tap = Least
+// Tapping an already-selected card resets and starts over
+function selectOption(idx) {
+  const cards = document.querySelectorAll('.option-card');
+  const hint  = document.getElementById('tapHint');
+
+  if (selections.most === null) {
+    // First tap: mark as Most
+    selections.most = idx;
+    cards[idx].classList.add('most');
+    hint.textContent = 'Now select the option least like you';
+  } else if (selections.least === null && idx !== selections.most) {
+    // Second tap (different card): mark as Least
+    selections.least = idx;
+    cards[idx].classList.add('least');
+    hint.textContent = '✓ Ready — tap Next to continue';
+    hint.className = 'tap-hint ready';
+    document.getElementById('btnNext').className = 'btn-next ready';
+  } else {
+    // Any other tap: reset and start over with this card as Most
+    cards.forEach(c => c.classList.remove('most', 'least'));
+    selections = { most: null, least: null };
+    selections.most = idx;
+    cards[idx].classList.add('most');
+    hint.textContent = 'Now select the option least like you';
+    hint.className = 'tap-hint';
+    document.getElementById('btnNext').className = 'btn-next';
+  }
+}
+
+// Advances to next question after scoring current selections
+function nextQuestion() {
+  if (selections.most === null || selections.least === null) return;
+
+  const q = sessionQuestions[currentQ];
+
+  // Apply scores to all 7 options:
+  //   Most selected  → SCORE_MOST  (6)
+  //   Least selected → SCORE_LEAST (1)
+  //   All others     → SCORE_MID   (3)
+  q.options.forEach((opt, i) => {
+    if (i === selections.most)       scores[opt.mat] += SCORE_MOST;
+    else if (i === selections.least) scores[opt.mat] += SCORE_LEAST;
+    else                             scores[opt.mat] += SCORE_MID;
+  });
+
+  // Track which material scored highest for this domain
+  const dom = q.domain;
+  domainScores[dom] = domainScores[dom] || {};
+  domainScores[dom][q.options[selections.most].mat] =
+    (domainScores[dom][q.options[selections.most].mat] || 0) + SCORE_MOST;
+
+  currentQ++;
+  currentQ >= QUESTIONS_PER_SESSION ? showResult() : renderQuestion();
+}
+
+/* ══════════════════════════════════════════════════
+   7. RESULT DISPLAY
+   ──────────────────────────────────────────────────
+   Percentages are calculated as: (score / TOTAL_POINTS) × 100
+   Since every question distributes exactly 22 points and there
+   are 6 questions, TOTAL_POINTS = 132. All percentages always
+   sum to exactly 100%.
+══════════════════════════════════════════════════ */
+function showResult() {
+  // Sort materials by score, highest first
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const topMat = sorted[0][0];
+  const mat    = MATERIALS[topMat];
+
+  // Set the result hero color via CSS custom property
+  document.getElementById('result').style.setProperty('--mat-color', mat.color);
+  document.getElementById('resultSymbol').textContent      = mat.symbol;
+  document.getElementById('resultName').textContent        = mat.name;
+  document.getElementById('resultTagline').textContent     = mat.tagline;
+  document.getElementById('resultProfile').textContent     = mat.profile;
+  document.getElementById('resultRelationships').textContent = mat.relationships;
+
+  // Build material percentage bars
+  // % = score / TOTAL_POINTS × 100 → always sums to 100%
+  const bd = document.getElementById('matBreakdown');
+  bd.innerHTML = '';
+
+  // Verify total for debugging (should equal TOTAL_POINTS)
+  // const total = Object.values(scores).reduce((a,b) => a+b, 0);
+
+  sorted.forEach(function(entry) {
+    var mk  = entry[0];
+    var sc  = entry[1];
+    var m   = MATERIALS[mk];
+    var pct = Math.round(sc / TOTAL_POINTS * 100);
+    var div = document.createElement('div');
+    div.className = 'mat-row';
+    div.innerHTML =
+      '<span class="mat-label" style="color:' + m.color + '">' + m.name + '</span>' +
+      '<div class="mat-bar-track"><div class="mat-bar-fill" style="background:' + m.color + '" data-pct="' + pct + '"></div></div>' +
+      '<span class="mat-pct">' + pct + '%</span>';
+    bd.appendChild(div);
+  });
+
+  // ── Domain profile bars ──
+  // Shows how the dominant material ranks on the key engineering property
+  // for each life domain. Rankings from MTLSave7normKEY workbook data.
+  // TO MODIFY: edit DOMAIN_PROFILES below (rankings, labels, property names).
+  const DOMAIN_PROFILES = {
+    Social: {
+      property: 'Thermal Conductivity (κ)',
+      trait: 'Connectivity',
+      loLabel: 'Selective',
+      hiLabel: 'Highly Connected',
+      explanation: 'How readily you share warmth, energy, and ideas with others',
+      // Rank out of 7 from workbook, converted to %: rank/7 × 100
+      pct: { metal:100, ceramic:86, composite:71, foam:57, polymer:43, elastomer:29, natural:14 },
+    },
+    Beliefs: {
+      property: "Young's Modulus (E)",
+      trait: 'Resoluteness',
+      loLabel: 'Highly Flexible',
+      hiLabel: 'Highly Resolute',
+      explanation: 'Stiffness of your belief system — resistance to bending under pressure',
+      pct: { composite:100, ceramic:86, metal:71, polymer:57, natural:43, elastomer:29, foam:14 },
+    },
+    Health: {
+      property: 'Ultimate Tensile Strength (Ftu)',
+      trait: 'Endurance',
+      loLabel: 'Low Drive',
+      hiLabel: 'High Discipline',
+      explanation: 'Capacity to sustain physical effort and discipline over time',
+      pct: { metal:100, composite:86, ceramic:71, polymer:57, elastomer:43, natural:29, foam:14 },
+    },
+    Financial: {
+      property: 'Specific Tensile Strength (σts/ρ)',
+      trait: 'Efficiency',
+      loLabel: 'Spends Freely',
+      hiLabel: 'Maximum Efficiency',
+      explanation: 'Maximum output from minimum resource — strength-to-weight thinking',
+      pct: { composite:100, metal:86, ceramic:71, polymer:57, natural:43, foam:29, elastomer:14 },
+    },
+    Learning: {
+      property: 'Thermal Expansion (α)',
+      trait: 'Adaptability',
+      loLabel: 'Rigid',
+      hiLabel: 'Highly Adaptive',
+      explanation: 'How much you expand and change in response to new environments',
+      pct: { foam:100, elastomer:86, polymer:71, natural:57, metal:43, composite:29, ceramic:14 },
+    },
+    Time: {
+      property: 'Loss Coefficient (η)',
+      trait: 'Release',
+      loLabel: 'Holds Tight',
+      hiLabel: 'Lets Go Easily',
+      explanation: 'Energy dissipation — how readily you release tension and move forward',
+      pct: { foam:100, elastomer:86, natural:71, polymer:57, composite:43, metal:29, ceramic:14 },
+    },
+  };
+
+  const db = document.getElementById('domainBars');
+  db.innerHTML = '';
+  const matColor = mat.color;
+
+  DOMAIN_ORDER.forEach(function(dom) {
+    var dp  = DOMAIN_PROFILES[dom];
+    var pct = dp.pct[topMat] || 0;
+    var row = document.createElement('div');
+    row.className = 'domain-profile-row';
+    row.innerHTML =
+      '<div class="domain-profile-header">' +
+        '<span class="domain-profile-name">' + dom + '</span>' +
+        '<span class="domain-profile-property">' + dp.property + ' \u00b7 ' + dp.trait + '</span>' +
+      '</div>' +
+      '<div class="domain-profile-trait">' + dp.explanation + '</div>' +
+      '<div class="domain-bar-track">' +
+        '<div class="domain-bar-fill" style="background:' + matColor + '" data-pct="' + pct + '"></div>' +
+      '</div>' +
+      '<div class="domain-bar-label">' +
+        '<span class="domain-bar-lo">' + dp.loLabel + '</span>' +
+        '<span class="domain-bar-pct">' + pct + '%</span>' +
+        '<span class="domain-bar-hi">' + dp.hiLabel + '</span>' +
+      '</div>';
+    db.appendChild(row);
+  });
+
+  // Build deep-dive buttons for this material's result
+  buildDeepDiveLinks(topMat, mat);
+
+  showScreen('result');
+
+  setTimeout(function() {
+    document.querySelectorAll('.mat-bar-fill, .domain-bar-fill').forEach(function(b) {
+      b.style.width = b.dataset.pct + '%';
+    });
+  }, 250);
+}
+
+/* ══════════════════════════════════════════════════
+   7b. DEEP DIVE LINK BUILDER
+   ──────────────────────────────────────────────────
+   Injects "All About" and "Compare All 7" buttons onto
+   the result screen after scoring is complete.
+   TO CHANGE FILE NAMES: update the two filenames below.
+   Both pages open in a new tab pre-loaded with the
+   user's material selected/highlighted.
+══════════════════════════════════════════════════ */
+function buildDeepDiveLinks(matKey, mat) {
+  var el = document.getElementById('deepDiveLinks');
+  if (!el) return;
+  el.innerHTML = '';
+
+  // "All About" button — styled in the material's color
+  var a1 = document.createElement('a');
+  a1.href   = 'MindMyMaterial_AllAbout.html#' + matKey; // ← update filename if renamed
+  a1.target = '_blank';
+  a1.style.cssText =
+    'flex:1;min-width:160px;display:flex;align-items:center;justify-content:center;' +
+    'padding:13px 16px;border-radius:10px;text-decoration:none;' +
+    'background:' + mat.color + ';color:var(--navy);' +
+    'font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:0.1em;';
+  a1.textContent = 'All About ' + mat.name + ' →';
+  el.appendChild(a1);
+
+  // "Compare All 7" button — outlined in the material's color
+  var a2 = document.createElement('a');
+  a2.href   = 'MindMyMaterial_Compare.html#' + matKey; // ← update filename if renamed
+  a2.target = '_blank';
+  a2.style.cssText =
+    'flex:1;min-width:160px;display:flex;align-items:center;justify-content:center;' +
+    'padding:13px 16px;border-radius:10px;text-decoration:none;' +
+    'background:var(--surface);border:1px solid ' + mat.color + ';color:' + mat.color + ';' +
+    'font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:0.1em;';
+  a2.textContent = 'Compare All 7 Materials →';
+  el.appendChild(a2);
+}
+
+/* ══════════════════════════════════════════════════
+   8. EVENT LISTENERS
+   ──────────────────────────────────────────────────
+   All buttons wired here via addEventListener.
+   Never use onclick in HTML — keeps logic in one place.
+══════════════════════════════════════════════════ */
+
+// "Find My Material" button on intro screen
+document.getElementById('startBtn').addEventListener('click', function() {
+  buildSession();
+  showScreen('quiz');
+  renderQuestion();
+});
+
+// "Next" button on quiz screen
+document.getElementById('btnNext').addEventListener('click', nextQuestion);
+
+// "Retake" button on result screen
+document.getElementById('retakeBtn').addEventListener('click', function() {
+  showScreen('intro');
+});
+
+// "Copy result" button — TO MODIFY: edit the share text below
+document.getElementById('copyBtn').addEventListener('click', function() {
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const mat    = MATERIALS[sorted[0][0]];
+  // ↓ EDIT THIS LINE to change the share message
+  const shareText = 'My mental material is ' + mat.name + '! "' + mat.tagline + '" — Take the Mind My Material assessment at mindmymaterial.com';
+  navigator.clipboard.writeText(shareText).then(() => {
+    document.getElementById('copyBtn').textContent = 'Copied ✓';
+    setTimeout(() => { document.getElementById('copyBtn').textContent = 'Copy result to share'; }, 2000);
+  });
+});
+
+</script>
+</body>
+</html>

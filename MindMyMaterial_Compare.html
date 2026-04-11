@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  MIND MY MATERIAL — Full Comparison Page                    ║
+  ║  iSight Laboratories · InSight Division                     ║
+  ║                                                             ║
+  ║  USAGE:                                                     ║
+  ║  Open directly, or link with hash to highlight a material:  ║
+  ║  MindMyMaterial_Compare.html#metal                          ║
+  ║                                                             ║
+  ║  QUICK EDIT GUIDE:                                          ║
+  ║  • Property data   → PROPS array (sourced from workbook)    ║
+  ║  • Material colors → CSS :root variables                    ║
+  ║  • Sort order      → change default sortCol/sortDir values  ║
+  ║  • Back links      → .nav-link href attributes in HTML      ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compare All Materials — Mind My Material</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   BRAND & MATERIAL COLORS
+══════════════════════════════════════════ */
+:root {
+  --amber:#d8973c; --amber-lt:#e8b86d; --rust:#bd632f;
+  --navy:#273e47; --teal:#335a70; --cream:#e8dfc4; --cream-dk:#c9bfa0;
+  --bg:#1a2a32; --surface:#1f3340; --surface2:#253d4d;
+  --border:rgba(232,223,196,0.08); --muted:#7a9aaa;
+  --composite:#9a8abf; --metal:#8fa8bc; --ceramic:#c4b59a;
+  --polymer:#6daa7a;   --natural:#8aaa5a; --elastomer:#c4835a; --foam:#7ab8cc;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--cream); font-family:'DM Sans',sans-serif; font-weight:300; }
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 80% 0%, rgba(51,90,112,.35) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 10% 90%, rgba(39,62,71,.5) 0%, transparent 60%);
+}
+
+/* ── TOP NAV ── */
+.topbar {
+  position:sticky; top:0; z-index:30;
+  background:rgba(26,42,50,.94); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  padding:12px 24px; display:flex; align-items:center; gap:16px;
+}
+.topbar-logo { width:26px; opacity:.7; flex-shrink:0; }
+.topbar-logo svg { width:100%; height:auto; }
+.topbar-title { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:.1em; color:var(--muted); flex:1; }
+.nav-link { font-size:12px; letter-spacing:.08em; color:var(--muted); text-decoration:none; transition:color .2s; }
+.nav-link:hover { color:var(--amber); }
+
+/* ── PAGE ── */
+.page { max-width:1100px; margin:0 auto; padding:40px 20px 80px; position:relative; z-index:1; }
+
+/* ── HEADER ── */
+.page-header { margin-bottom:32px; }
+.eyebrow { font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--amber); margin-bottom:8px; display:block; }
+h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(32px,5vw,56px); letter-spacing:.06em; color:var(--cream); line-height:1; margin-bottom:10px; }
+.sub { font-size:14px; color:var(--muted); line-height:1.7; max-width:560px; }
+
+/* ── MATERIAL FILTER PILLS ── */
+.filter-bar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px; align-items:center; }
+.filter-label { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-right:4px; }
+.mat-pill {
+  padding:5px 14px; border-radius:100px; border:1px solid;
+  font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:.1em;
+  cursor:pointer; transition:all .2s; opacity:.5; background:transparent;
+}
+.mat-pill:hover  { opacity:.85; }
+.mat-pill.active { opacity:1; }
+.mat-pill.highlighted { box-shadow:0 0 0 2px currentColor; }
+
+/* ── SEARCH & SORT CONTROLS ── */
+.controls { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+.search-input {
+  flex:1; min-width:200px; padding:9px 14px; border-radius:8px;
+  background:var(--surface); border:1px solid var(--border); color:var(--cream);
+  font-family:'DM Sans',sans-serif; font-size:13px; outline:none;
+  transition:border-color .2s;
+}
+.search-input:focus { border-color:rgba(216,151,60,.4); }
+.search-input::placeholder { color:var(--muted); }
+.sort-select {
+  padding:9px 14px; border-radius:8px;
+  background:var(--surface); border:1px solid var(--border); color:var(--cream);
+  font-family:'DM Sans',sans-serif; font-size:13px; outline:none; cursor:pointer;
+}
+
+/* ── COMPARISON TABLE ── */
+.table-wrap { overflow-x:auto; border-radius:12px; border:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; min-width:780px; }
+
+/* Column headers */
+thead tr { background:var(--surface2); }
+th {
+  padding:10px 12px; font-family:'Bebas Neue',sans-serif;
+  font-size:12px; letter-spacing:.1em; font-weight:400;
+  text-align:left; border-bottom:1px solid var(--border);
+  cursor:pointer; user-select:none; white-space:nowrap;
+  transition:color .2s;
+}
+th:hover { color:var(--amber); }
+th.sorted { color:var(--amber); }
+th.mat-header { text-align:center; width:72px; }
+
+/* Sort arrows */
+.sort-arrow { font-size:9px; margin-left:4px; opacity:.5; }
+th.sorted .sort-arrow { opacity:1; }
+
+/* Rows */
+tbody tr {
+  border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:rgba(255,255,255,.025); }
+
+/* Property name cell */
+td.prop-cell { padding:10px 12px; }
+.prop-name  { font-size:13px; color:var(--cream); line-height:1.3; }
+.prop-trait { font-size:11px; color:var(--muted); margin-top:2px; }
+.prop-sym   { font-size:10px; color:var(--amber); opacity:.7; }
+
+/* Rank cells — one per material */
+td.rank-cell {
+  text-align:center; padding:8px 6px; width:72px;
+}
+.rank-box {
+  display:inline-flex; flex-direction:column; align-items:center;
+  gap:3px; width:52px;
+}
+.rank-num {
+  font-family:'Bebas Neue',sans-serif; font-size:20px;
+  line-height:1; transition:color .2s;
+}
+.rank-mini-bar {
+  width:36px; height:3px; background:rgba(255,255,255,.08);
+  border-radius:2px; overflow:hidden;
+}
+.rank-mini-fill { height:100%; border-radius:2px; }
+
+/* Highlight a column when a material is selected */
+td.rank-cell.highlight-col { background:rgba(255,255,255,.04); }
+th.mat-header.highlight-col { background:rgba(255,255,255,.06); }
+
+/* Top rank badge */
+.rank-1 { background:rgba(216,151,60,.15); }
+
+/* ── LEGEND ── */
+.legend {
+  display:flex; gap:20px; flex-wrap:wrap; margin-top:20px;
+  font-size:12px; color:var(--muted);
+}
+.legend-item { display:flex; align-items:center; gap:6px; }
+.legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+/* ── SUMMARY CARDS ── */
+.summary-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:10px; margin-bottom:28px;
+}
+.summary-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:14px 16px;
+  border-top:2px solid;
+}
+.sc-name  { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:.06em; margin-bottom:2px; }
+.sc-avg   { font-size:12px; color:var(--muted); margin-bottom:8px; }
+.sc-top   { font-size:11px; color:var(--cream); opacity:.8; line-height:1.5; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.fade { animation:fadeUp .4s ease both; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     TOP NAV BAR
+     TO EDIT: update nav-link href targets
+══════════════════════════════════════════ -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 251.71 210">
+      <path fill="#273e47" d="M47.58,29.55c3.89-2.96,7.2-5.09,8.22-5.74,1.92-1.23,6.43-4.09,11.81-6.65,8.01-3.81,14.77-5.42,20.77-6.8,5.04-1.16,15.93-3.36,30.04-3.47,9.76-.08,17.2.87,22.12,1.51,4.59.6,10.95,1.46,19.13,3.63,4.29,1.14,10.44,2.79,17.86,6.12,5.5,2.46,13.17,5.97,21.45,13.07,3.03,2.6,10.76,9.64,17.26,21.08,2,3.51,4.85,8.61,6.87,16.01,1.03,3.78,2.68,11.22,2.09,20.7-.29,4.6-.71,10.61-3.74,17.68-1.29,3.03-4.37,9.67-11.36,15.11-4.27,3.32-8.28,4.84-9.79,5.36-1.91.66-6.76,2.3-13.08,2.04-5.59-.23-8.36-1.8-10.16,0-1.03,1.03-.97,2.34-1.05,5.59-.19,7.69-.28,11.53-1.34,14.35-1.38,3.66-4.09,5.59-7.92,8.31-6.05,4.3-11.93,5.51-16.21,6.35-3.82.75-10.08,1.55-18.01.6-1.76-.21-3.17-.46-4.5-.78-1.08-.26-4.08-.98-7.75-2.58-6.56-2.87-15.58-5.36-15.58-5.36-16.39-4.52-14.45-4.24-17.93-4.99-4.62-.99-9.32-1.99-15.69-2.49-3.52-.28-13.1-.99-22.64.91-5.6,1.11-8.59,2.04-8.59,2.04-1.75.58-2.45.89-3.91,1.34-.92.23-1.92.38-1.92.38-3.33.52-5.94.22-6.95.08-3.15-.44-5.45-1.43-6.28-1.81-.99-.46-4.42-2.13-8.07-6.35-2.62-3.03-5.84-7.94-8.07-16.62-.62-2.4-3.35-13.61-.93-29.21,1.84-11.91,5.75-20.38,8.18-25.55,6.38-13.58,14.06-22.34,18.38-27.19,1.3-1.46,8.3-9.25,18.31-16.85Z"/>
+      <path fill="#d8973c" d="M72.51,50.62c2.41-1.63,4.46-2.8,5.09-3.16,1.19-.67,3.98-2.25,7.31-3.66,4.96-2.1,9.14-2.98,12.86-3.74,3.12-.64,9.86-1.85,18.6-1.91,6.04-.04,10.65.48,13.69.83,2.84.33,6.78.8,11.84,2,2.65.63,6.46,1.54,11.06,3.37,3.4,1.36,8.15,3.28,13.28,7.19,1.88,1.43,6.66,5.31,10.69,11.6,1.24,1.93,3,4.74,4.26,8.82.64,2.08,1.66,6.18,1.3,11.4-.18,2.53-.44,5.84-2.31,9.73-.8,1.67-2.7,5.32-7.03,8.32-2.64,1.83-5.12,2.66-6.06,2.95-1.18.37-4.18,1.27-8.09,1.12-3.46-.13-5.18-.99-6.29,0-.64.57-.6,1.29-.65,3.08-.12,4.23-.17,6.35-.83,7.9-.85,2.01-2.53,3.08-4.9,4.57-3.74,2.37-7.39,3.03-10.04,3.49-2.37.41-6.24.86-11.15.33-5.01-.53-5.43-1.47-17.3-4.82-6.36-1.8-9.43-2.42-11.1-2.74-2.86-.55-5.77-1.09-9.71-1.37-2.18-.15-8.11-.54-14.02.5-3.47.61-5.32,1.12-5.32,1.12-1.92.58-2.55.86-4.16,1.08-2.06.28-3.68.12-4.3.04-1.95-.24-3.37-.79-3.89-1-.61-.25-2.74-1.17-5-3.49-1.62-1.67-3.62-4.37-5-9.15-.38-1.32-2.07-7.49-.58-16.08,1.14-6.56,3.56-11.22,5.07-14.07,3.95-7.48,8.7-12.3,11.38-14.97.8-.8,5.14-5.09,11.33-9.27Z"/>
+      <path fill="#6daa7a" d="M82.32,58.14c1.92-1.16,3.54-2,4.04-2.26.94-.48,3.16-1.61,5.81-2.61,3.94-1.5,7.27-2.13,10.22-2.67,2.48-.46,7.84-1.32,14.78-1.37,4.8-.03,8.46.34,10.88.59,2.26.24,5.39.57,9.41,1.43,2.11.45,5.14,1.1,8.79,2.41,2.71.97,6.48,2.35,10.55,5.14,1.49,1.02,5.29,3.79,8.49,8.29.98,1.38,2.39,3.39,3.38,6.3.51,1.49,1.32,4.41,1.03,8.14-.14,1.81-.35,4.17-1.84,6.95-.64,1.19-2.15,3.8-5.59,5.94-2.1,1.31-4.07,1.9-4.82,2.11-.94.26-3.33.9-6.43.8-2.75-.09-4.11-.71-5,0-.51.4-.48.92-.51,2.2-.09,3.02-.14,4.53-.66,5.64-.68,1.44-2.01,2.2-3.9,3.27-2.97,1.69-5.87,2.17-7.98,2.5-1.88.29-4.96.61-8.86.24-3.99-.38-4.32-1.05-13.75-3.45-5.06-1.28-7.49-1.73-8.82-1.96-2.28-.39-4.59-.78-7.72-.98-1.73-.11-6.44-.39-11.14.36-2.76.44-4.23.8-4.23.8-1.53.41-2.03.61-3.31.77-1.64.2-2.92.09-3.42.03-1.55-.17-2.68-.56-3.09-.71-.49-.18-2.18-.84-3.97-2.5-1.29-1.19-2.87-3.12-3.97-6.54-.3-.94-1.65-5.35-.46-11.49.91-4.68,2.83-8.02,4.03-10.05,3.14-5.34,6.92-8.78,9.05-10.69.64-.57,4.08-3.64,9.01-6.62Z"/>
+    </svg>
+  </div>
+  <span class="topbar-title">MIND MY MATERIAL — FULL COMPARISON</span>
+  <nav style="display:flex;gap:16px;">
+    <a class="nav-link" href="MindMyMaterial_App_v9.html">← Take the Test</a>
+    <a class="nav-link" href="MindMyMaterial_AllAbout.html">All About →</a>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE HEADER + CONTROLS
+     All content below is static HTML shell —
+     table rows are injected by renderTable() in JS
+══════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header fade">
+    <span class="eyebrow">iSight Laboratories · Mind My Material</span>
+    <h1>Full Material Comparison</h1>
+    <p class="sub">All 43 engineering properties mapped to personality traits — ranked 1–7 across every material. Click any column header to sort. Tap a material pill to highlight your result.</p>
+  </div>
+
+  <!-- ── SUMMARY SCORECARDS — one per material ── -->
+  <div class="summary-grid fade" id="summaryGrid"></div>
+
+  <!-- ── MATERIAL HIGHLIGHT PILLS ── -->
+  <div class="filter-bar">
+    <span class="filter-label">Highlight:</span>
+    <div id="matPills"></div>
+  </div>
+
+  <!-- ── SEARCH + SORT ── -->
+  <div class="controls">
+    <input class="search-input" id="searchInput" type="text" placeholder="Search property or trait…">
+    <select class="sort-select" id="sortSelect">
+      <option value="no">Sort by: Property #</option>
+      <option value="property">Sort by: Property Name</option>
+      <option value="trait">Sort by: Trait</option>
+      <option value="composite">Sort by: Composite</option>
+      <option value="metal">Sort by: Metal</option>
+      <option value="ceramic">Sort by: Ceramic</option>
+      <option value="polymer">Sort by: Polymer</option>
+      <option value="natural">Sort by: Natural</option>
+      <option value="elastomer">Sort by: Elastomer</option>
+      <option value="foam">Sort by: Foam</option>
+    </select>
+  </div>
+
+  <!-- ── COMPARISON TABLE ── -->
+  <div class="table-wrap fade">
+    <table id="compareTable">
+      <thead>
+        <tr>
+          <th data-col="property" style="min-width:220px;">Property <span class="sort-arrow">↕</span></th>
+          <th data-col="trait" style="min-width:140px;">Trait <span class="sort-arrow">↕</span></th>
+          <!-- Material columns injected by JS -->
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ── LEGEND ── -->
+  <div class="legend" id="legend"></div>
+
+</div><!-- end .page -->
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   MATERIAL CONFIGURATION
+   TO EDIT: update name, symbol, or color per material
+══════════════════════════════════════════════════════════ */
+const MATERIALS = {
+  composite: { name:'Composite', symbol:'CFRP',  color:'#9a8abf' },
+  metal:     { name:'Metal',     symbol:'Fe',    color:'#8fa8bc' },
+  ceramic:   { name:'Ceramic',   symbol:'Si₃N₄', color:'#c4b59a' },
+  polymer:   { name:'Polymer',   symbol:'C₂H₄',  color:'#6daa7a' },
+  natural:   { name:'Natural',   symbol:'Org',   color:'#8aaa5a' },
+  elastomer: { name:'Elastomer', symbol:'C₄H₆',  color:'#c4835a' },
+  foam:      { name:'Foam',      symbol:'PU',    color:'#7ab8cc' },
+};
+const MAT_ORDER = ['composite','metal','ceramic','polymer','natural','elastomer','foam'];
+
+/* ══════════════════════════════════════════════════════════
+   PROPERTY DATA — 43 properties from MTLSave7normKEY tab
+   Ranks: 1 = lowest, 7 = highest for that material
+   TO EDIT: update individual entries or re-import from workbook
+══════════════════════════════════════════════════════════ */
+const PROPS = [{"no":0,"property":"Compliance/Softness","symbol":"Soft","trait":"Indecisive","description":"Measure of deformability; inverse of stiffness.","rank_def":"7=Most Compliant","ranks":{"composite":1,"metal":2,"ceramic":3,"polymer":4,"natural":5,"elastomer":6,"foam":7}},{"no":1,"property":"Melting Temperature","symbol":"Tm","trait":"Calm under Pressure","description":"Temperature stability under heat — composure under stress.","rank_def":"7=Most Stable","ranks":{"composite":6,"metal":5,"ceramic":7,"polymer":4,"natural":2,"elastomer":1,"foam":3}},{"no":2,"property":"Young's Modulus","symbol":"E","trait":"Resolute","description":"Stiffness; resistance to deformation — firmness of beliefs.","rank_def":"7=Most Resolute","ranks":{"composite":7,"metal":5,"ceramic":6,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":3,"property":"Density","symbol":"ρ","trait":"Groundedness","description":"Mass per unit volume — substantial, grounded presence.","rank_def":"7=Most Grounded","ranks":{"composite":5,"metal":7,"ceramic":6,"polymer":4,"natural":2,"elastomer":3,"foam":1}},{"no":4,"property":"Tensile Yield Strength","symbol":"σy","trait":"Resilience","description":"Stress before permanent deformation — withstanding pressure.","rank_def":"7=Most Resilient","ranks":{"composite":6,"metal":5,"ceramic":7,"polymer":4,"natural":2,"elastomer":3,"foam":1}},{"no":5,"property":"Ultimate Tensile Strength","symbol":"Ftu","trait":"Endurance","description":"Maximum stress before failure — sustained effort capacity.","rank_def":"7=Most Enduring","ranks":{"composite":6,"metal":7,"ceramic":5,"polymer":4,"natural":2,"elastomer":3,"foam":1}},{"no":6,"property":"Specific Tensile Strength","symbol":"σts/ρ","trait":"Efficiency","description":"Strength per unit weight — output per unit of resource.","rank_def":"7=Most Efficient","ranks":{"composite":7,"metal":6,"ceramic":5,"polymer":4,"natural":3,"elastomer":1,"foam":2}},{"no":7,"property":"Fracture Toughness","symbol":"KIc","trait":"Toughness","description":"Resistance to crack propagation — absorbing hard knocks.","rank_def":"7=Toughest","ranks":{"composite":6,"metal":7,"ceramic":5,"polymer":2,"natural":4,"elastomer":3,"foam":1}},{"no":8,"property":"Cost per Mass","symbol":"Cm","trait":"Pragmatism","description":"Economic value per mass — strategic resource assessment.","rank_def":"7=Most Pragmatic","ranks":{"composite":7,"metal":6,"ceramic":5,"polymer":1,"natural":2,"elastomer":4,"foam":3}},{"no":9,"property":"Specific Heat","symbol":"Cp","trait":"Emotional Stability","description":"Energy to change temperature — emotional buffer capacity.","rank_def":"7=Most Stable","ranks":{"composite":1,"metal":2,"ceramic":3,"polymer":4,"natural":7,"elastomer":5,"foam":6}},{"no":10,"property":"Thermal Conductivity","symbol":"κ","trait":"Connectivity","description":"Heat transfer rate — sharing energy and warmth with others.","rank_def":"7=Most Connected","ranks":{"composite":5,"metal":7,"ceramic":6,"polymer":3,"natural":1,"elastomer":2,"foam":4}},{"no":11,"property":"Thermal Expansion","symbol":"α","trait":"Adaptability","description":"Expansion in response to heat — growth through new environments.","rank_def":"7=Most Adaptive","ranks":{"composite":2,"metal":3,"ceramic":1,"polymer":5,"natural":4,"elastomer":6,"foam":7}},{"no":12,"property":"Electrical Resistivity","symbol":"ρe","trait":"Independence","description":"Resistance to electrical flow — autonomy from external influence.","rank_def":"7=Most Independent","ranks":{"composite":4,"metal":1,"ceramic":5,"polymer":3,"natural":2,"elastomer":7,"foam":6}},{"no":13,"property":"Dielectric Constant","symbol":"εr","trait":"Capacitance","description":"Ability to store electrical energy — information processing depth.","rank_def":"7=Most Capacious","ranks":{"composite":6,"metal":7,"ceramic":5,"polymer":3,"natural":2,"elastomer":4,"foam":1}},{"no":14,"property":"Embodied Energy","symbol":"Ee","trait":"Effortfulness","description":"Total energy to produce — effort and investment in becoming.","rank_def":"7=Highest Effort","ranks":{"composite":7,"metal":6,"ceramic":2,"polymer":3,"natural":1,"elastomer":4,"foam":5}},{"no":15,"property":"Carbon Footprint","symbol":"CO₂","trait":"Responsibility","description":"Environmental impact — sense of accountability for impact.","rank_def":"7=Most Responsible","ranks":{"composite":7,"metal":6,"ceramic":3,"polymer":2,"natural":1,"elastomer":4,"foam":5}},{"no":16,"property":"Water Demand","symbol":"Wq","trait":"Resourcefulness","description":"Resource consumption — making do with less.","rank_def":"7=Most Resourceful","ranks":{"composite":5,"metal":6,"ceramic":1,"polymer":2,"natural":7,"elastomer":4,"foam":3}},{"no":17,"property":"Flammability","symbol":"Fl","trait":"Volatility","description":"Susceptibility to ignition — emotional reactivity.","rank_def":"7=Most Volatile","ranks":{"composite":3,"metal":2,"ceramic":1,"polymer":6,"natural":7,"elastomer":4,"foam":5}},{"no":18,"property":"Environmental Resistance (Fresh)","symbol":"Fres","trait":"Steadfastness (Calm)","description":"Freshwater corrosion resistance — reliability in ordinary conditions.","rank_def":"7=Most Steadfast","ranks":{"composite":7,"metal":6,"ceramic":1,"polymer":2,"natural":4,"elastomer":3,"foam":5}},{"no":19,"property":"Environmental Resistance (Salt)","symbol":"Sres","trait":"Steadfastness (Harsh)","description":"Saltwater corrosion resistance — resilience in adversarial conditions.","rank_def":"7=Most Steadfast","ranks":{"composite":7,"metal":6,"ceramic":1,"polymer":2,"natural":4,"elastomer":3,"foam":5}},{"no":20,"property":"Environmental Resistance (UV)","symbol":"UVres","trait":"Longevity under Exposure","description":"UV resistance — maintaining integrity under public scrutiny.","rank_def":"7=Most Durable","ranks":{"composite":3,"metal":1,"ceramic":2,"polymer":6,"natural":4,"elastomer":5,"foam":7}},{"no":21,"property":"Environmental Resistance (Wear)","symbol":"Wres","trait":"Durability","description":"Wear resistance — enduring repeated daily contact.","rank_def":"7=Most Durable","ranks":{"composite":3,"metal":2,"ceramic":1,"polymer":4,"natural":6,"elastomer":5,"foam":7}},{"no":22,"property":"Compressive Strength","symbol":"σc","trait":"Structured Efficiency","description":"Resistance to compression — holding structure when burdened.","rank_def":"7=Best Under Compression","ranks":{"composite":5,"metal":6,"ceramic":7,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":23,"property":"Specific Modulus","symbol":"E/ρ","trait":"Composure under Load","description":"Stiffness per weight — intellectual firmness without heaviness.","rank_def":"7=Best Composure/Effort","ranks":{"composite":6,"metal":2,"ceramic":3,"polymer":4,"natural":7,"elastomer":1,"foam":5}},{"no":24,"property":"Loss Coefficient","symbol":"η","trait":"Forgiveness","description":"Damping capacity — releasing tension and letting go.","rank_def":"7=Most Forgiving","ranks":{"composite":3,"metal":2,"ceramic":1,"polymer":4,"natural":5,"elastomer":6,"foam":7}},{"no":25,"property":"Warm-Cold","symbol":"W-C","trait":"Approachability","description":"Perceived warmth — social accessibility and welcome.","rank_def":"7=Most Approachable","ranks":{"composite":4,"metal":1,"ceramic":2,"polymer":5,"natural":7,"elastomer":6,"foam":3}},{"no":26,"property":"Soft-Hard","symbol":"S-H","trait":"Flexibility vs. Rigidity","description":"Perceived hardness — boundary firmness vs. accommodation.","rank_def":"7=Most Rigid","ranks":{"composite":5,"metal":6,"ceramic":7,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":27,"property":"Acoustic Brightness","symbol":"Ab","trait":"Vibrancy","description":"Sound clarity — communicative presence and expressiveness.","rank_def":"7=Most Vibrant","ranks":{"composite":5,"metal":6,"ceramic":7,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":28,"property":"Relative Cost per Volume","symbol":"Cv","trait":"Affordability","description":"Value per volume — exclusivity vs. accessibility.","rank_def":"7=Most Exclusive","ranks":{"composite":7,"metal":5,"ceramic":6,"polymer":3,"natural":1,"elastomer":4,"foam":2}},{"no":29,"property":"Thermal Diffusivity","symbol":"α_d","trait":"Responsiveness","description":"Temperature change propagation — reading the room quickly.","rank_def":"7=Most Responsive","ranks":{"composite":6,"metal":7,"ceramic":5,"polymer":4,"natural":2,"elastomer":3,"foam":1}},{"no":30,"property":"Eco Friendly/Recyclability","symbol":"Eco","trait":"Sustainability","description":"Circular potential — regenerative mindset.","rank_def":"7=Most Sustainable","ranks":{"composite":3,"metal":4,"ceramic":2,"polymer":5,"natural":7,"elastomer":6,"foam":1}},{"no":31,"property":"Manufacturability Ease","symbol":"Me","trait":"Malleability","description":"Ease of shaping — adapting to new roles and contexts.","rank_def":"7=Most Malleable","ranks":{"composite":2,"metal":4,"ceramic":1,"polymer":7,"natural":3,"elastomer":6,"foam":5}},{"no":32,"property":"Abundance","symbol":"Ab_e","trait":"Accessibility","description":"Availability in nature — ease of connection.","rank_def":"7=Most Accessible","ranks":{"composite":2,"metal":5,"ceramic":4,"polymer":6,"natural":7,"elastomer":3,"foam":1}},{"no":33,"property":"Glass Transition Temperature","symbol":"Tg","trait":"Flexibility Threshold","description":"Rigid-to-rubbery shift temperature — flexibility trigger point.","rank_def":"7=Highest Threshold","ranks":{"composite":5,"metal":1,"ceramic":7,"polymer":4,"natural":2,"elastomer":3,"foam":6}},{"no":34,"property":"Ductility/Malleability/Brittleness","symbol":"ε_f","trait":"Adaptability vs. Fracture","description":"Deformation before fracture — bending without breaking.","rank_def":"7=Most Ductile","ranks":{"composite":4,"metal":7,"ceramic":1,"polymer":3,"natural":2,"elastomer":6,"foam":5}},{"no":35,"property":"Luster","symbol":"Lu","trait":"Charisma","description":"Surface reflectivity — social presence and magnetism.","rank_def":"7=Most Charismatic","ranks":{"composite":5,"metal":7,"ceramic":6,"polymer":3,"natural":2,"elastomer":1,"foam":4}},{"no":36,"property":"Chemical Inertness","symbol":"Ci","trait":"Unreactivity","description":"Resistance to chemical reaction — emotional non-reactivity.","rank_def":"7=Most Stable","ranks":{"composite":5,"metal":1,"ceramic":7,"polymer":6,"natural":3,"elastomer":4,"foam":2}},{"no":37,"property":"Hardness","symbol":"H","trait":"Stubbornness","description":"Resistance to indentation — boundary strength and fixed opinions.","rank_def":"7=Most Stubborn","ranks":{"composite":5,"metal":6,"ceramic":7,"polymer":4,"natural":3,"elastomer":2,"foam":1}},{"no":38,"property":"Translucency/Transparency","symbol":"Tr","trait":"Openness","description":"Degree of transparency — openness and sharing of inner world.","rank_def":"7=Most Open","ranks":{"composite":3,"metal":1,"ceramic":7,"polymer":5,"natural":2,"elastomer":4,"foam":6}},{"no":39,"property":"Impact Resistance","symbol":"Ir","trait":"Shock Absorption","description":"Sudden impact absorption — handling crises without shattering.","rank_def":"7=Best Shock Absorber","ranks":{"composite":7,"metal":6,"ceramic":1,"polymer":4,"natural":3,"elastomer":5,"foam":2}},{"no":40,"property":"Tailorable Properties","symbol":"Tp","trait":"Versatility","description":"Degree of customization — personal versatility and range.","rank_def":"7=Most Versatile","ranks":{"composite":7,"metal":3,"ceramic":2,"polymer":5,"natural":1,"elastomer":4,"foam":6}},{"no":41,"property":"Isotropic/Anisotropic","symbol":"Iso","trait":"Consistency","description":"Uniformity in all directions — behavioral consistency.","rank_def":"7=Most Consistent","ranks":{"composite":1,"metal":7,"ceramic":6,"polymer":5,"natural":2,"elastomer":3,"foam":4}},{"no":42,"property":"Texture/Surface Smoothability","symbol":"Ts","trait":"Politeness","description":"Surface refinement ease — social polish and tact.","rank_def":"7=Most Polished","ranks":{"composite":4,"metal":7,"ceramic":5,"polymer":6,"natural":1,"elastomer":3,"foam":2}}];
+
+/* ══════════════════════════════════════════════════════════
+   STATE — tracks current highlight, sort, filter
+══════════════════════════════════════════════════════════ */
+let highlighted = null;  // Currently highlighted material key
+let sortCol     = 'no';  // Current sort column
+let sortDir     = 1;     // 1 = ascending, -1 = descending
+let searchTerm  = '';    // Current search filter
+
+/* ══════════════════════════════════════════════════════════
+   INIT — builds summary cards, pills, table headers, then renders
+══════════════════════════════════════════════════════════ */
+function init() {
+  // Read hash to pre-highlight a material
+  const hash = location.hash.replace('#','').toLowerCase();
+  if (MAT_ORDER.includes(hash)) highlighted = hash;
+
+  buildSummaryCards();
+  buildMatPills();
+  buildTableHeaders();
+  renderTable();
+  buildLegend();
+}
+
+/* Builds the per-material summary scorecards at the top */
+function buildSummaryCards() {
+  const grid = document.getElementById('summaryGrid');
+  MAT_ORDER.forEach(mk => {
+    const m   = MATERIALS[mk];
+    const avg = (PROPS.reduce((s,p)=>s+p.ranks[mk],0)/PROPS.length).toFixed(1);
+    const top = [...PROPS].sort((a,b)=>b.ranks[mk]-a.ranks[mk]).slice(0,3).map(p=>p.trait).join(' · ');
+    const div = document.createElement('div');
+    div.className = 'summary-card';
+    div.style.cssText = 'border-top-color:' + m.color;
+    div.innerHTML =
+      '<div class="sc-name" style="color:' + m.color + '">' + m.name + '</div>' +
+      '<div class="sc-avg">Avg rank: ' + avg + ' / 7</div>' +
+      '<div class="sc-top" style="font-size:11px;color:var(--muted)">Top traits: ' + top + '</div>';
+    grid.appendChild(div);
+  });
+}
+
+/* Builds the material highlight pills */
+function buildMatPills() {
+  const bar = document.getElementById('matPills');
+  bar.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;';
+  // "None" pill
+  const none = document.createElement('button');
+  none.className = 'mat-pill' + (!highlighted ? ' active' : '');
+  none.style.cssText = 'color:var(--muted);border-color:var(--muted);';
+  none.textContent = 'None';
+  none.onclick = () => { highlighted = null; renderTable(); updatePills(); };
+  bar.appendChild(none);
+  // Per-material pills
+  MAT_ORDER.forEach(mk => {
+    const m = MATERIALS[mk];
+    const btn = document.createElement('button');
+    btn.className = 'mat-pill' + (mk === highlighted ? ' active highlighted' : '');
+    btn.dataset.mat = mk;
+    btn.style.cssText = 'color:' + m.color + ';border-color:' + m.color;
+    btn.textContent = m.name;
+    btn.onclick = () => {
+      highlighted = (highlighted === mk) ? null : mk;
+      renderTable(); updatePills();
+      location.hash = highlighted || '';
+    };
+    bar.appendChild(btn);
+  });
+}
+
+function updatePills() {
+  document.querySelectorAll('.mat-pill[data-mat]').forEach(p => {
+    const active = p.dataset.mat === highlighted;
+    p.className = 'mat-pill' + (active ? ' active highlighted' : '');
+  });
+  const none = document.querySelector('.mat-pill:not([data-mat])');
+  if (none) none.className = 'mat-pill' + (!highlighted ? ' active' : '');
+}
+
+/* Builds material column headers in the table */
+function buildTableHeaders() {
+  const tr = document.querySelector('thead tr');
+  MAT_ORDER.forEach(mk => {
+    const m  = MATERIALS[mk];
+    const th = document.createElement('th');
+    th.className = 'mat-header' + (mk === highlighted ? ' highlight-col' : '');
+    th.dataset.col = mk;
+    th.innerHTML = '<span style="color:' + m.color + '">' + m.name + '</span><span class="sort-arrow">↕</span>';
+    th.onclick = () => sortBy(mk);
+    tr.appendChild(th);
+  });
+  // Wire property/trait column sorts
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    if (!MAT_ORDER.includes(th.dataset.col)) {
+      th.onclick = () => sortBy(th.dataset.col);
+    }
+  });
+}
+
+/* Sort handler */
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = -1; }
+  document.getElementById('sortSelect').value = MAT_ORDER.includes(col) ? col : col;
+  renderTable();
+}
+
+/* Main table renderer — filters, sorts, and injects rows */
+function renderTable() {
+  // Filter by search term
+  let rows = PROPS.filter(p => {
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    return p.property.toLowerCase().includes(q) ||
+           p.trait.toLowerCase().includes(q) ||
+           (p.description || '').toLowerCase().includes(q);
+  });
+
+  // Sort
+  rows.sort((a,b) => {
+    let av, bv;
+    if (MAT_ORDER.includes(sortCol)) {
+      av = a.ranks[sortCol]; bv = b.ranks[sortCol];
+    } else if (sortCol === 'no') {
+      av = a.no; bv = b.no;
+    } else {
+      av = (a[sortCol]||'').toLowerCase(); bv = (b[sortCol]||'').toLowerCase();
+    }
+    if (av < bv) return -1 * sortDir;
+    if (av > bv) return  1 * sortDir;
+    return 0;
+  });
+
+  // Update sort indicators
+  document.querySelectorAll('th').forEach(th => {
+    th.classList.remove('sorted');
+    const arr = th.querySelector('.sort-arrow');
+    if (arr) arr.textContent = '↕';
+  });
+  const activeTh = document.querySelector('th[data-col="' + sortCol + '"]');
+  if (activeTh) {
+    activeTh.classList.add('sorted');
+    const arr = activeTh.querySelector('.sort-arrow');
+    if (arr) arr.textContent = sortDir === -1 ? '↓' : '↑';
+  }
+
+  // Update highlight on mat-header columns
+  document.querySelectorAll('th.mat-header').forEach(th => {
+    th.classList.toggle('highlight-col', th.dataset.col === highlighted);
+  });
+
+  // Build tbody
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  rows.forEach(p => {
+    const tr = document.createElement('tr');
+    // Find max rank for this property (to show gold for winner)
+    const maxRank = Math.max(...MAT_ORDER.map(mk => p.ranks[mk]));
+
+    // Property + trait cell
+    let td = document.createElement('td');
+    td.className = 'prop-cell';
+    td.innerHTML =
+      '<div class="prop-name">' + p.property + '</div>' +
+      '<div class="prop-trait">' + p.trait + ' · <span class="prop-sym">' + p.symbol + '</span></div>';
+    tr.appendChild(td);
+
+    // Trait description cell
+    td = document.createElement('td');
+    td.className = 'prop-cell';
+    td.style.cssText = 'font-size:12px;color:var(--muted);';
+    td.textContent = p.rank_def || '';
+    tr.appendChild(td);
+
+    // One rank cell per material
+    MAT_ORDER.forEach(mk => {
+      const m    = MATERIALS[mk];
+      const rank = p.ranks[mk];
+      const pct  = Math.round(rank / 7 * 100);
+      const isHL = mk === highlighted;
+      const isMax = rank === maxRank;
+
+      const td2 = document.createElement('td');
+      td2.className = 'rank-cell' + (isHL ? ' highlight-col' : '') + (isMax ? ' rank-1' : '');
+
+      td2.innerHTML =
+        '<div class="rank-box">' +
+          '<span class="rank-num" style="color:' + (isMax ? m.color : 'var(--muted)') + '">' + rank + '</span>' +
+          '<div class="rank-mini-bar">' +
+            '<div class="rank-mini-fill" style="width:' + pct + '%;background:' + m.color + ';opacity:' + (isMax ? '1' : '.45') + '"></div>' +
+          '</div>' +
+        '</div>';
+      tr.appendChild(td2);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  // Row count hint
+  if (searchTerm) {
+    const hint = document.createElement('tr');
+    hint.innerHTML = '<td colspan="' + (2 + MAT_ORDER.length) + '" style="padding:10px 12px;font-size:12px;color:var(--muted);text-align:center;">' + rows.length + ' of ' + PROPS.length + ' properties shown</td>';
+    tbody.appendChild(hint);
+  }
+}
+
+/* Builds the color legend at the bottom */
+function buildLegend() {
+  const leg = document.getElementById('legend');
+  leg.innerHTML = '<span style="font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;">Materials: </span>';
+  MAT_ORDER.forEach(mk => {
+    const m = MATERIALS[mk];
+    leg.innerHTML +=
+      '<div class="legend-item">' +
+        '<div class="legend-dot" style="background:' + m.color + '"></div>' +
+        '<span>' + m.name + '</span>' +
+      '</div>';
+  });
+  leg.innerHTML += '<span style="margin-left:16px;font-size:11px;color:var(--muted);">Highlighted number = highest rank for that property</span>';
+}
+
+/* ══════════════════════════════════════════════════════════
+   EVENT WIRING
+══════════════════════════════════════════════════════════ */
+document.getElementById('searchInput').addEventListener('input', function() {
+  searchTerm = this.value.trim();
+  renderTable();
+});
+
+document.getElementById('sortSelect').addEventListener('change', function() {
+  sortBy(this.value);
+});
+
+window.addEventListener('hashchange', function() {
+  const hash = location.hash.replace('#','').toLowerCase();
+  highlighted = MAT_ORDER.includes(hash) ? hash : null;
+  renderTable(); updatePills();
+});
+
+// Run on load
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
